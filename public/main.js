@@ -28,10 +28,50 @@ const SETTINGS = {
 // Material parameters
 // ================================
 const MATERIALS = {
-  cloth: { tearMultiplier: 1.4 },
-  rope: { tearMultiplier: 2.0 },
-  rubber: { tearMultiplier: 3.0 },
+  cloth: {tearMultiplier: 1.4},
+  rope: {tearMultiplier: 4.0},
+  rubber: {tearMultiplier: 3.0},
 }
+
+
+// ================================
+// Mouse
+// ================================
+const mouse = {
+  x: 0,
+  y: 0,
+  down: false,
+  point: null,
+  radius: 20,
+}
+
+canvas.addEventListener('mousedown', e => {
+  const rect = canvas.getBoundingClientRect()
+  mouse.x = e.clientX - rect.left
+  mouse.y = e.clientY - rect.top
+  mouse.down = true
+
+  mouse.point = findNearestPoint(mouse.x, mouse.y, mouse.radius)
+
+  if (mouse.point) {
+    mouse.point.pinned = true
+  }
+})
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect()
+  mouse.x = e.clientX - rect.left
+  mouse.y = e.clientY - rect.top
+})
+
+canvas.addEventListener('mouseup', () => {
+  mouse.down = false
+
+  if (mouse.point) {
+    mouse.point.pinned = false
+    mouse.point = null
+  }
+})
 
 
 // ================================
@@ -63,20 +103,38 @@ function createConstraint(i1, i2, restLength, tearMultiplier) {
   }
 }
 
+function findNearestPoint(x, y, radius) {
+  let nearest = null
+  let minDist = radius * radius
+
+  for (const p of points) {
+    const dx = p.x - x
+    const dy = p.y - y
+    const dist = dx * dx + dy * dy
+
+    if (dist < minDist) {
+      minDist = dist
+      nearest = p
+    }
+  }
+
+  return nearest
+}
+
 const range = n => [...Array(n).keys()]
 
 // ================================
 // Rope initialization
 // ================================
 function initRope({
-  startX,
-  startY,
-  segmentLength,
-  segmentCount,
-  pinFirst = true,
-  pinLast = false,
-  horizontal = false,
-}) {
+                    startX,
+                    startY,
+                    segmentLength,
+                    segmentCount,
+                    pinFirst = true,
+                    pinLast = false,
+                    horizontal = false,
+                  }) {
   const baseIndex = points.length
 
   const ropePoints = range(segmentCount).map(i =>
@@ -166,7 +224,7 @@ function integrate() {
 }
 
 function satisfyConstraints() {
-  // Repeat several times for stability 
+  // Repeat several times for stability
   for (let i = 0; i < SETTINGS.constraintIterations; i++) {
     // For each constraint:
     for (const c of constraints) {
@@ -206,7 +264,17 @@ function satisfyConstraints() {
   }
 }
 
+function applyMouse() {
+  if (!mouse.down || !mouse.point) return
+
+  mouse.point.x = mouse.x
+  mouse.point.y = mouse.y
+  mouse.point.prevX = mouse.x
+  mouse.point.prevY = mouse.y
+}
+
 function update() {
+  applyMouse()
   applyForces()
   integrate()
   satisfyConstraints()
@@ -216,10 +284,22 @@ function update() {
 // ================================
 // Render
 // ================================
+
+function renderMouse() {
+  if (mouse.point) {
+    ctx.fillStyle = 'lime'
+    ctx.beginPath()
+    ctx.arc(mouse.point.x, mouse.point.y, 4, 0, Math.PI * 2)
+    ctx.fill()
+  }
+}
+
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
   renderRope(ctx)
+
+  renderMouse()
 }
 
 
