@@ -213,7 +213,8 @@ function satisfyConstraints() {
   // Repeat several times for stability
   for (let i = 0; i < SETTINGS.constraintIterations; i++) {
     // For each constraint:
-    for (const c of constraints) {
+    for (let k = 0; k < constraints.length; k++) {
+      const c = constraints[k]
       // get two points
       const p1 = points[c.i1]
       const p2 = points[c.i2]
@@ -225,7 +226,8 @@ function satisfyConstraints() {
       if (dist === 0) continue
 
       if (dist > c.tearLength) {
-        constraints.splice(i, 1)
+        constraints.splice(k, 1)
+        k--
         continue
       }
 
