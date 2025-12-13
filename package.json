@@ -1,0 +1,16 @@
+{
+  "name": "cloth-simulation-verlet",
+  "module": "index.ts",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "livereload": "^0.10.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "private": true,
+  "scripts": {
+    "start": "bunx livereload -w 1000 -d public"
+  },
+  "type": "module"
+}
