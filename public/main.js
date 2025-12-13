@@ -17,10 +17,10 @@ resizeCanvas()
 // Simulation parameters
 // ================================
 const SETTINGS = {
-  gravity: 0.4,
+  gravity: 0.1,
   friction: 0.999,
   constraintIterations: 4,
-  pointSpacing: 15,
+  pointSpacing: 20,
 }
 
 
@@ -29,8 +29,8 @@ const SETTINGS = {
 // ================================
 const MATERIALS = {
   cloth: { tearMultiplier: 1.4 },
-  rope: { tearMultiplier: 4.0 },
-  rubber: { tearMultiplier: 3.0 },
+  rope: { tearMultiplier: 3.0 },
+  rubber: { tearMultiplier: 6.0 },
 }
 
 
@@ -42,6 +42,7 @@ const mouse = {
   y: 0,
   down: false,
   point: null,
+  initialPinned: false,
   radius: 20,
 }
 
@@ -54,6 +55,7 @@ canvas.addEventListener('mousedown', e => {
   mouse.point = findNearestPoint(mouse.x, mouse.y, mouse.radius)
 
   if (mouse.point) {
+    mouse.initialPinned = mouse.point.pinned
     mouse.point.pinned = true
   }
 })
@@ -68,7 +70,7 @@ canvas.addEventListener('mouseup', () => {
   mouse.down = false
 
   if (mouse.point) {
-    mouse.point.pinned = false
+    mouse.point.pinned = mouse.initialPinned
     mouse.point = null
   }
 })
@@ -167,12 +169,59 @@ function initRope({
 // ================================
 // Cloth initialization
 // ================================
-function initCloth() {
-  // TODO:
-  // 1. Create a grid of points
-  // 2. Pin top row
-  // 3. Store points in a flat array
-  // 4. Create structural constraints (right and down neighbors)
+function initCloth({
+  startX,
+  startY,
+  rows,
+  columns,
+  segmentLength,
+  pinTop = true,
+  pinTopLeft = false,
+  pinTopRight = false,
+  pinTopCenter = false,
+}) {
+  const baseIndex = points.length
+
+  const clothPoints = range(rows).map(i =>
+    range(columns).map(j => {
+      let pinned = false
+      if (pinTop && i === 0) pinned = true
+      if (pinTopLeft && i === 0 && j === 0) pinned = true
+      if (pinTopRight && i === 0 && j === columns - 1) pinned = true
+      if (pinTopCenter && i === 0 && j === Math.floor(columns / 2)) pinned = true
+
+      return createPoint(
+        startX + j * segmentLength,
+        startY + i * segmentLength,
+        pinned,
+      )
+    }),
+  )
+
+  const horizontalConstraints = range(rows).map(i =>
+    range(columns - 1).map(j =>
+      createConstraint(
+        baseIndex + i * columns + j,
+        baseIndex + i * columns + j + 1,
+        segmentLength,
+        MATERIALS.cloth.tearMultiplier,
+      ),
+    ),
+  )
+
+  const verticalConstraints = range(rows - 1).map(i =>
+    range(columns).map(j =>
+      createConstraint(
+        baseIndex + i * columns + j,
+        baseIndex + (i + 1) * columns + j,
+        segmentLength,
+        MATERIALS.cloth.tearMultiplier,
+      ),
+    ),
+  )
+
+  points.push(...clothPoints.flat())
+  constraints.push(...horizontalConstraints.flat(), ...verticalConstraints.flat())
 }
 
 
@@ -278,7 +327,7 @@ function stressColor(t) {
   return `rgb(${r}, ${g}, 0)`
 }
 
-function renderRope(ctx) {
+function renderSimulation(ctx) {
   // render constraints
   ctx.lineWidth = 2
   ctx.lineCap = 'round'
@@ -324,7 +373,7 @@ function renderMouse() {
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  renderRope(ctx)
+  renderSimulation(ctx)
 
   renderMouse()
 }
@@ -343,13 +392,23 @@ function loop() {
 // ================================
 // Entry point
 // ================================
-initRope({
+// initRope({
+//   startX: canvas.width / 4,
+//   startY: 50,
+//   pinLast: true,
+//   horizontal: true,
+//   segmentCount: 50,
+//   segmentLength: SETTINGS.pointSpacing,
+// })
+initCloth({
   startX: canvas.width / 4,
   startY: 50,
-  pinLast: true,
-  horizontal: true,
-  segmentCount: 50,
-  segmentLength: SETTINGS.pointSpacing,
+  rows: 20,
+  columns: 20,
+  pinTop: false,
+  pinTopLeft: true,
+  pinTopRight: true,
+  pinTopCenter: true,
+  segmentLength: SETTINGS.pointSpacing * 1.6,
 })
-initCloth()
 requestAnimationFrame(loop)
