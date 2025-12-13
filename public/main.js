@@ -28,9 +28,9 @@ const SETTINGS = {
 // Material parameters
 // ================================
 const MATERIALS = {
-  cloth: {tearMultiplier: 1.4},
-  rope: {tearMultiplier: 4.0},
-  rubber: {tearMultiplier: 3.0},
+  cloth: { tearMultiplier: 1.4 },
+  rope: { tearMultiplier: 4.0 },
+  rubber: { tearMultiplier: 3.0 },
 }
 
 
@@ -123,18 +123,23 @@ function findNearestPoint(x, y, radius) {
 
 const range = n => [...Array(n).keys()]
 
+function clamp(v, min = 0, max = 1) {
+  return Math.max(min, Math.min(max, v))
+}
+
+
 // ================================
 // Rope initialization
 // ================================
 function initRope({
-                    startX,
-                    startY,
-                    segmentLength,
-                    segmentCount,
-                    pinFirst = true,
-                    pinLast = false,
-                    horizontal = false,
-                  }) {
+  startX,
+  startY,
+  segmentLength,
+  segmentCount,
+  pinFirst = true,
+  pinLast = false,
+  horizontal = false,
+}) {
   const baseIndex = points.length
 
   const ropePoints = range(segmentCount).map(i =>
@@ -156,25 +161,6 @@ function initRope({
 
   points.push(...ropePoints)
   constraints.push(...ropeConstraints)
-}
-
-function renderRope(ctx) {
-  ctx.strokeStyle = '#aaa'
-  for (const c of constraints) {
-    const p1 = points[c.i1]
-    const p2 = points[c.i2]
-    ctx.beginPath()
-    ctx.moveTo(p1.x, p1.y)
-    ctx.lineTo(p2.x, p2.y)
-    ctx.stroke()
-  }
-
-  ctx.fillStyle = '#fff'
-  for (const p of points) {
-    ctx.beginPath()
-    ctx.arc(p.x, p.y, 2, 0, Math.PI * 2)
-    ctx.fill()
-  }
 }
 
 
@@ -284,6 +270,45 @@ function update() {
 // ================================
 // Render
 // ================================
+function stressColor(t) {
+  const r = Math.floor(255 * t)
+  const g = Math.floor(255 * (1 - t))
+  return `rgb(${r}, ${g}, 0)`
+}
+
+function renderRope(ctx) {
+  // render constraints
+  ctx.lineWidth = 2
+  ctx.lineCap = 'round'
+  for (const c of constraints) {
+    const p1 = points[c.i1]
+    const p2 = points[c.i2]
+
+    // compute distance and stress
+    const dx = p2.x - p1.x
+    const dy = p2.y - p1.y
+    const dist = Math.sqrt(dx * dx + dy * dy)
+    // compute stress
+    const t = clamp(
+      (dist - c.restLength) / (c.tearLength - c.restLength)
+    )
+
+    ctx.strokeStyle = stressColor(t)
+
+    ctx.beginPath()
+    ctx.moveTo(p1.x, p1.y)
+    ctx.lineTo(p2.x, p2.y)
+    ctx.stroke()
+  }
+
+  // render points
+  ctx.fillStyle = '#fff'
+  for (const p of points) {
+    ctx.beginPath()
+    ctx.arc(p.x, p.y, 2, 0, Math.PI * 2)
+    ctx.fill()
+  }
+}
 
 function renderMouse() {
   if (mouse.point) {
@@ -317,10 +342,11 @@ function loop() {
 // Entry point
 // ================================
 initRope({
-  startX: canvas.width / 2,
+  startX: canvas.width / 4,
   startY: 50,
+  pinLast: true,
   horizontal: true,
-  segmentCount: 25,
+  segmentCount: 50,
   segmentLength: SETTINGS.pointSpacing,
 })
 initCloth()
