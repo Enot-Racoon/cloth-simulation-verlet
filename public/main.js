@@ -290,9 +290,9 @@ function satisfyConstraints() {
       const stretch = dist / c.restLength
       const computeStiffness = (stretch) => {
         let res = 1 * SETTINGS.friction
-        if (stretch > 1) res = (1 - stretch) * 0.9
+        if (stretch > 1) res = (1 - stretch) * 0.8
 
-        return clamp(res, 0.7, 1)
+        return clamp(res, 0.7, 1.1)
       }
       const stiffness = computeStiffness(stretch)
 
@@ -344,7 +344,8 @@ function update() {
 function stressColor(t) {
   const r = Math.floor(255 * t)
   const g = Math.floor(255 * (1 - t))
-  return `rgb(${r}, ${g}, 0)`
+  const b = 0
+  return `rgb(${r}, ${g}, ${b})`
 }
 
 function renderSimulation(ctx) {
