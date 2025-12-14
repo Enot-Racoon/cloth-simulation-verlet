@@ -10,6 +10,12 @@ emerges from simple rules.
 
 ---
 
+## Live demo
+
+https://Enot-Racoon.github.io/cloth-simulation-verlet
+
+---
+
 ## What is implemented
 
 At the current stage the project includes:
@@ -24,9 +30,9 @@ At the current stage the project includes:
 - Mouse interaction (dragging points directly)
 - Visual stress feedback (coloring constraints based on stretch)
 - Simple UI controls for:
-  - gravity
-  - constraint iterations
-  - tear strength
+    - gravity
+    - constraint iterations
+    - tear strength
 
 All rendering is done using HTML Canvas.
 
@@ -37,22 +43,22 @@ All rendering is done using HTML Canvas.
 This project is primarily educational and focuses on understanding:
 
 - **Verlet integration**
-  - Why velocity does not need to be stored explicitly
-  - How previous position encodes inertia
+    - Why velocity does not need to be stored explicitly
+    - How previous position encodes inertia
 
 - **Position-Based Dynamics (PBD)**
-  - Constraints as geometric corrections, not forces
-  - Iterative solvers and numerical stiffness
+    - Constraints as geometric corrections, not forces
+    - Iterative solvers and numerical stiffness
 
 - **Discrete representations of continuous systems**
-  - Points as nodes
-  - Constraints as relationships
-  - Meshes and grids as approximations of continuous material
+    - Points as nodes
+    - Constraints as relationships
+    - Meshes and grids as approximations of continuous material
 
 - **Material behavior (simplified)**
-  - Difference between elasticity, stiffness and breaking
-  - Non-linear response to large deformation (strain stiffening)
-  - Visualizing internal stress
+    - Difference between elasticity, stiffness and breaking
+    - Non-linear response to large deformation (strain stiffening)
+    - Visualizing internal stress
 
 The implementation intentionally avoids heavy math and FEM solvers in favor of
 intuition, experimentation, and interactive feedback.
@@ -114,12 +120,6 @@ This project exists as a learning playground to:
 - understand the tradeoffs between stability, realism and performance
 - explore how complex behavior emerges from simple rules
 - build intuition before diving into more formal methods like FEM
-
----
-
-## License
-
-MIT (or whatever you prefer)
 
 ---
 
