@@ -49,6 +49,35 @@ const mouse = {
   radius: 20,
 }
 
+// Touch events
+canvas.addEventListener('touchstart', e => {
+  const rect = canvas.getBoundingClientRect()
+  mouse.x = e.clientX - rect.left
+  mouse.y = e.clientY - rect.top
+  mouse.down = true
+
+  mouse.point = findNearestPoint(mouse.x, mouse.y, mouse.radius)
+
+  if (mouse.point) {
+    mouse.initialPinned = mouse.point.pinned
+    mouse.point.pinned = true
+  }
+})
+canvas.addEventListener('touchmove', e => {
+  const rect = canvas.getBoundingClientRect()
+  mouse.x = e.clientX - rect.left
+  mouse.y = e.clientY - rect.top
+})
+canvas.addEventListener('touchend', () => {
+  mouse.down = false
+
+  if (mouse.point) {
+    mouse.point.pinned = mouse.initialPinned
+    mouse.point = null
+  }
+})
+
+// Mouse events
 canvas.addEventListener('mousedown', e => {
   const rect = canvas.getBoundingClientRect()
   mouse.x = e.clientX - rect.left
@@ -343,14 +372,14 @@ function update() {
 // ================================
 function stressColor(t) {
   const r = Math.floor(255 * t)
-  const g = Math.floor(255 * (1 - t))
+  const g = Math.floor(200 * (1 - t))
   const b = 0
   return `rgb(${r}, ${g}, ${b})`
 }
 
 function renderSimulation(ctx) {
   // render constraints
-  ctx.lineWidth = 2
+  ctx.lineWidth = 4
   ctx.lineCap = 'round'
   for (const c of constraints) {
     const p1 = points[c.i1]
@@ -374,10 +403,10 @@ function renderSimulation(ctx) {
   }
 
   // render points
-  ctx.fillStyle = '#fff'
+  ctx.fillStyle = '#eee'
   for (const p of points) {
     ctx.beginPath()
-    ctx.arc(p.x, p.y, 2, 0, Math.PI * 2)
+    ctx.arc(p.x, p.y, ctx.lineWidth / 2, 0, Math.PI * 2)
     ctx.fill()
   }
 }
@@ -419,23 +448,22 @@ function loop() {
 // ================================
 // Entry point
 // ================================
-// initRope({
-//   startX: canvas.width / 4,
-//   startY: 50,
-//   pinLast: true,
-//   horizontal: true,
-//   segmentCount: 50,
-//   segmentLength: SETTINGS.pointSpacing,
-// })
-initCloth({
+initRope({
   startX: canvas.width / 4,
   startY: 50,
-  rows: 20,
-  columns: 20,
+  horizontal: true,
+  segmentCount: 60,
+  segmentLength: SETTINGS.pointSpacing,
+})
+initCloth({
+  startX: 50 + canvas.width / 4,
+  startY: 50,
+  rows: 18,
+  columns: 18,
   pinTop: false,
   pinTopLeft: true,
   pinTopRight: true,
   pinTopCenter: true,
-  segmentLength: SETTINGS.pointSpacing * 1.6,
+  segmentLength: SETTINGS.pointSpacing * 2,
 })
 requestAnimationFrame(loop)
