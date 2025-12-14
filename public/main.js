@@ -1,12 +1,26 @@
 // ================================
+// Simulation parameters
+// ================================
+const SETTINGS = {
+  gravity: 0.4,
+  friction: 0.97,
+  constraintIterations: 8,
+  pointSpacing: 20,
+  floorOffset: 10, // percent of the canvas height
+}
+
+
+// ================================
 // Canvas setup
 // ================================
 const canvas = document.getElementById('canvas')
 const ctx = canvas.getContext('2d')
+let floorY = 0
 
 function resizeCanvas() {
   canvas.width = window.innerWidth
   canvas.height = window.innerHeight
+  floorY = canvas.height - (canvas.height * SETTINGS.floorOffset) / 100
 }
 
 window.addEventListener('resize', resizeCanvas)
@@ -14,21 +28,10 @@ resizeCanvas()
 
 
 // ================================
-// Simulation parameters
-// ================================
-const SETTINGS = {
-  gravity: 0.1,
-  friction: 0.999,
-  constraintIterations: 4,
-  pointSpacing: 20,
-}
-
-
-// ================================
 // Material parameters
 // ================================
 const MATERIALS = {
-  cloth: { tearMultiplier: 1.4 },
+  cloth: { tearMultiplier: 1.5 },
   rope: { tearMultiplier: 3.0 },
   rubber: { tearMultiplier: 6.0 },
 }
@@ -124,10 +127,7 @@ function findNearestPoint(x, y, radius) {
 }
 
 const range = n => [...Array(n).keys()]
-
-function clamp(v, min = 0, max = 1) {
-  return Math.max(min, Math.min(max, v))
-}
+const clamp = (v, min = 0, max = 1) => Math.max(min, Math.min(max, v))
 
 
 // ================================
@@ -239,6 +239,12 @@ function applyForces() {
 
     // Gravity
     p.y += SETTINGS.gravity
+
+    // Floor  
+    if (p.y >= floorY) {
+      p.y = floorY
+      p.prevY = floorY
+    }
   })
 }
 
@@ -281,9 +287,18 @@ function satisfyConstraints() {
       }
 
       // compute and apply correction based on pinned state
-      const diff = (dist - c.restLength) / dist
-      const cx = dx * diff
-      const cy = dy * diff
+      const stretch = dist / c.restLength
+      const computeStiffness = (stretch) => {
+        let res = 1 * SETTINGS.friction
+        if (stretch > 1) res = (1 - stretch) * 0.9
+
+        return clamp(res, 0.7, 1)
+      }
+      const stiffness = computeStiffness(stretch)
+
+      const correction = (dist - c.restLength) / dist
+      const cx = dx * correction * stiffness
+      const cy = dy * correction * stiffness
 
       if (!p1.pinned && !p2.pinned) {
         p1.x += cx * 0.5
@@ -301,13 +316,18 @@ function satisfyConstraints() {
   }
 }
 
-function applyMouse() {
+function applyMouse(applyFloor = true) {
   if (!mouse.down || !mouse.point) return
 
   mouse.point.x = mouse.x
   mouse.point.y = mouse.y
   mouse.point.prevX = mouse.x
   mouse.point.prevY = mouse.y
+
+  if (applyFloor && mouse.point.y >= floorY) {
+    mouse.point.y = floorY
+    mouse.point.prevY = floorY
+  }
 }
 
 function update() {
@@ -361,6 +381,11 @@ function renderSimulation(ctx) {
   }
 }
 
+function renderFloor(ctx) {
+  ctx.fillStyle = '#ddd'
+  ctx.fillRect(0, floorY, canvas.width, 2)
+}
+
 function renderMouse() {
   if (mouse.point) {
     ctx.fillStyle = 'lime'
@@ -373,6 +398,7 @@ function renderMouse() {
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
+  renderFloor(ctx)
   renderSimulation(ctx)
 
   renderMouse()
