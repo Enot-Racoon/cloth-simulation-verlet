@@ -31,9 +31,9 @@ resizeCanvas()
 // Material parameters
 // ================================
 const MATERIALS = {
-  cloth: { tearMultiplier: 1.5 },
-  rope: { tearMultiplier: 3.0 },
-  rubber: { tearMultiplier: 6.0 },
+  cloth: {tearMultiplier: 1.5},
+  rope: {tearMultiplier: 3.0},
+  rubber: {tearMultiplier: 6.0},
 }
 
 
@@ -49,11 +49,14 @@ const mouse = {
   radius: 20,
 }
 
+this.x = x ?? touches[0].clientX
+this.y = y ?? touches[0].clientY
+
 // Touch events
 canvas.addEventListener('touchstart', e => {
   const rect = canvas.getBoundingClientRect()
-  mouse.x = e.clientX - rect.left
-  mouse.y = e.clientY - rect.top
+  mouse.x = e.touches[0].clientX - rect.left
+  mouse.y = e.touches[0].clientX - rect.top
   mouse.down = true
 
   mouse.point = findNearestPoint(mouse.x, mouse.y, mouse.radius)
@@ -65,8 +68,8 @@ canvas.addEventListener('touchstart', e => {
 })
 canvas.addEventListener('touchmove', e => {
   const rect = canvas.getBoundingClientRect()
-  mouse.x = e.clientX - rect.left
-  mouse.y = e.clientY - rect.top
+  mouse.x = e.touches[0].clientX - rect.left
+  mouse.y = e.touches[0].clientY - rect.top
 })
 canvas.addEventListener('touchend', () => {
   mouse.down = false
@@ -163,14 +166,14 @@ const clamp = (v, min = 0, max = 1) => Math.max(min, Math.min(max, v))
 // Rope initialization
 // ================================
 function initRope({
-  startX,
-  startY,
-  segmentLength,
-  segmentCount,
-  pinFirst = true,
-  pinLast = false,
-  horizontal = false,
-}) {
+                    startX,
+                    startY,
+                    segmentLength,
+                    segmentCount,
+                    pinFirst = true,
+                    pinLast = false,
+                    horizontal = false,
+                  }) {
   const baseIndex = points.length
 
   const ropePoints = range(segmentCount).map(i =>
@@ -199,16 +202,16 @@ function initRope({
 // Cloth initialization
 // ================================
 function initCloth({
-  startX,
-  startY,
-  rows,
-  columns,
-  segmentLength,
-  pinTop = true,
-  pinTopLeft = false,
-  pinTopRight = false,
-  pinTopCenter = false,
-}) {
+                     startX,
+                     startY,
+                     rows,
+                     columns,
+                     segmentLength,
+                     pinTop = true,
+                     pinTopLeft = false,
+                     pinTopRight = false,
+                     pinTopCenter = false,
+                   }) {
   const baseIndex = points.length
 
   const clothPoints = range(rows).map(i =>
@@ -269,7 +272,7 @@ function applyForces() {
     // Gravity
     p.y += SETTINGS.gravity
 
-    // Floor  
+    // Floor
     if (p.y >= floorY) {
       p.y = floorY
       p.prevY = floorY
@@ -391,7 +394,7 @@ function renderSimulation(ctx) {
     const dist = Math.sqrt(dx * dx + dy * dy)
     // compute stress
     const t = clamp(
-      (dist - c.restLength) / (c.tearLength - c.restLength)
+      (dist - c.restLength) / (c.tearLength - c.restLength),
     )
 
     ctx.strokeStyle = stressColor(t)
