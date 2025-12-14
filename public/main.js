@@ -4,7 +4,7 @@
 const SETTINGS = {
   gravity: 0.4,
   friction: 0.97,
-  constraintIterations: 6,
+  constraintIterations: 8,
   pointSpacing: 20,
   floorOffset: 10, // percent of the canvas height
 }
@@ -31,7 +31,7 @@ resizeCanvas()
 // Material parameters
 // ================================
 const MATERIALS = {
-  cloth: { tearMultiplier: 1.5 },
+  cloth: { tearMultiplier: 1.7 },
   rope: { tearMultiplier: 3.0 },
   rubber: { tearMultiplier: 6.0 },
 }
@@ -335,11 +335,11 @@ function satisfyConstraints() {
         p2.x -= cx * 0.5
         p2.y -= cy * 0.5
       } else if (p1.pinned && !p2.pinned) {
-        p2.x -= cx
-        p2.y -= cy
+        p2.y -= cy * 2
+        p2.x -= cx * 2
       } else if (!p1.pinned && p2.pinned) {
-        p1.x += cx
-        p1.y += cy
+        p1.x += cx * 2
+        p1.y += cy * 2
       }
     }
   }
@@ -459,7 +459,7 @@ initCloth({
   startX: 50 + canvas.width / 4,
   startY: 50,
   rows: 18,
-  columns: 18,
+  columns: 20,
   pinTop: false,
   pinTopLeft: true,
   pinTopRight: true,
