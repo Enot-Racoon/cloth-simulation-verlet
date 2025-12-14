@@ -4,7 +4,7 @@
 const SETTINGS = {
   gravity: 0.4,
   friction: 0.97,
-  constraintIterations: 8,
+  constraintIterations: 6,
   pointSpacing: 20,
   floorOffset: 10, // percent of the canvas height
 }
@@ -31,9 +31,9 @@ resizeCanvas()
 // Material parameters
 // ================================
 const MATERIALS = {
-  cloth: {tearMultiplier: 1.5},
-  rope: {tearMultiplier: 3.0},
-  rubber: {tearMultiplier: 6.0},
+  cloth: { tearMultiplier: 1.5 },
+  rope: { tearMultiplier: 3.0 },
+  rubber: { tearMultiplier: 6.0 },
 }
 
 
@@ -49,14 +49,11 @@ const mouse = {
   radius: 20,
 }
 
-this.x = x ?? touches[0].clientX
-this.y = y ?? touches[0].clientY
-
 // Touch events
 canvas.addEventListener('touchstart', e => {
   const rect = canvas.getBoundingClientRect()
   mouse.x = e.touches[0].clientX - rect.left
-  mouse.y = e.touches[0].clientX - rect.top
+  mouse.y = e.touches[0].clientY - rect.top
   mouse.down = true
 
   mouse.point = findNearestPoint(mouse.x, mouse.y, mouse.radius)
@@ -166,14 +163,14 @@ const clamp = (v, min = 0, max = 1) => Math.max(min, Math.min(max, v))
 // Rope initialization
 // ================================
 function initRope({
-                    startX,
-                    startY,
-                    segmentLength,
-                    segmentCount,
-                    pinFirst = true,
-                    pinLast = false,
-                    horizontal = false,
-                  }) {
+  startX,
+  startY,
+  segmentLength,
+  segmentCount,
+  pinFirst = true,
+  pinLast = false,
+  horizontal = false,
+}) {
   const baseIndex = points.length
 
   const ropePoints = range(segmentCount).map(i =>
@@ -202,16 +199,16 @@ function initRope({
 // Cloth initialization
 // ================================
 function initCloth({
-                     startX,
-                     startY,
-                     rows,
-                     columns,
-                     segmentLength,
-                     pinTop = true,
-                     pinTopLeft = false,
-                     pinTopRight = false,
-                     pinTopCenter = false,
-                   }) {
+  startX,
+  startY,
+  rows,
+  columns,
+  segmentLength,
+  pinTop = true,
+  pinTopLeft = false,
+  pinTopRight = false,
+  pinTopCenter = false,
+}) {
   const baseIndex = points.length
 
   const clothPoints = range(rows).map(i =>
@@ -455,7 +452,7 @@ initRope({
   startX: canvas.width / 4,
   startY: 50,
   horizontal: true,
-  segmentCount: 60,
+  segmentCount: 50,
   segmentLength: SETTINGS.pointSpacing,
 })
 initCloth({
