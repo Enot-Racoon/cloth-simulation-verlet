@@ -65,6 +65,8 @@ function resizeCanvas() {
   canvas.width = window.innerWidth
   canvas.height = window.innerHeight
 
+  SETTINGS.pointSpacing = canvas.width / 40
+
   if (!SETTINGS.showFloor) return
   floorY = canvas.height - (canvas.height * SETTINGS.floorOffset) / 100
 }
@@ -607,17 +609,23 @@ function loop() {
 // Entry point
 // ================================
 initRope({
-  startX: canvas.width / 4,
-  startY: 50,
+  startX: 2 * SETTINGS.pointSpacing,
+  startY: 2 * SETTINGS.pointSpacing,
   horizontal: true,
   segmentCount: 50,
   segmentLength: SETTINGS.pointSpacing,
 })
+initRope({
+  startX: 38 * SETTINGS.pointSpacing,
+  startY: 2 * SETTINGS.pointSpacing,
+  segmentCount: 50,
+  segmentLength: SETTINGS.pointSpacing,
+})
 initCloth({
-  startX: 50 + canvas.width / 4,
-  startY: 50,
+  startX: 4 * SETTINGS.pointSpacing,
+  startY: 2 * SETTINGS.pointSpacing,
   rows: 18,
-  columns: 20,
+  columns: 17,
   pinTop: false,
   pinTopLeft: true,
   pinTopRight: true,
