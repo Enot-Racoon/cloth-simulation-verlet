@@ -6,8 +6,19 @@ const SETTINGS = {
   friction: 0.97,
   constraintIterations: 8,
   pointSpacing: 20,
-  showFloor: true,
+  showFloor: false,
   floorOffset: 10, // percent of the canvas height
+  mouseRadius: 10,
+}
+
+
+// ================================
+// Material parameters
+// ================================
+const MATERIALS = {
+  cloth: { tearMultiplier: 2.0 },
+  rope: { tearMultiplier: 3.0 },
+  rubber: { tearMultiplier: 6.0 },
 }
 
 
@@ -15,9 +26,11 @@ const SETTINGS = {
 // Debug
 // ================================
 const debug = {
+  showDebug: false,
   debugData: {},
   element: document.getElementById('debug'),
   setDebugText(data) {
+    if (!this.showDebug) return
     this.element.textContent = JSON.stringify(data, null, 2)
   },
   clear() {
@@ -63,27 +76,39 @@ resizeCanvas()
 // Accelerometer
 // ================================
 const accelerometer = {
-  x: 0,
-  y: 0,
-  z: 0,
+  raw: { x: 0, y: 9.8, z: 0 },
+  filtered: { x: 0, y: 9.8, z: 0 },
+  normalized: { x: 0, y: 1, z: 0 },
 }
 function handleMotion(event) {
-  const acceleration = event.acceleration;
-  accelerometer.x = acceleration.x
-  accelerometer.y = acceleration.y
-  accelerometer.z = acceleration.z
+  const smoothing = 0.2
+  const { x = 0, y = 0, z = 0 } = event.accelerationIncludingGravity;
+
+  // 1. Update Raw Data
+  accelerometer.raw = { x, y, z }
+
+  // 2. Low Pass Filter
+  accelerometer.filtered.x += (x - accelerometer.filtered.x) * smoothing;
+  accelerometer.filtered.y += (y - accelerometer.filtered.y) * smoothing;
+  accelerometer.filtered.z += (z - accelerometer.filtered.z) * smoothing;
+
+  // 3. Normalize
+  // Handle Singularity: If device is lying flat (Gravity is all Z), X and Y are ~0.
+  // This causes atan2(0,0) which is unstable/undefined behavior for horizon calculation.
+  // We check if the XY magnitude is significant enough to determine orientation.
+  const magnitude = Math.sqrt(accelerometer.filtered.x * accelerometer.filtered.x + accelerometer.filtered.y * accelerometer.filtered.y);
+
+  const threshold = 1.0; // ~0.1g on XY plane required to update horizon
+
+  if (magnitude > threshold) {
+    accelerometer.normalized = normalizeVector(accelerometer.filtered);
+  } else {
+    // If flat, keep previous normalized vector to prevent "vertical rod" snapping
+    // We do update Z though for debugging
+    accelerometer.normalized.z = accelerometer.filtered.z / 9.8;
+  }
 }
 window.addEventListener('devicemotion', handleMotion);
-
-
-// ================================
-// Material parameters
-// ================================
-const MATERIALS = {
-  cloth: { tearMultiplier: 1.7 },
-  rope: { tearMultiplier: 3.0 },
-  rubber: { tearMultiplier: 6.0 },
-}
 
 
 // ================================
@@ -95,7 +120,7 @@ const mouse = {
   down: false,
   point: null,
   initialPinned: false,
-  radius: 20,
+  radius: SETTINGS.mouseRadius,
 }
 
 // Touch events
@@ -114,8 +139,9 @@ canvas.addEventListener('touchstart', e => {
 })
 canvas.addEventListener('touchmove', e => {
   const rect = canvas.getBoundingClientRect()
-  mouse.x = e.touches[0].clientX - rect.left
-  mouse.y = e.touches[0].clientY - rect.top
+  const smoothing = 0.2
+  mouse.x += (e.touches[0].clientX - rect.left - mouse.x) * smoothing
+  mouse.y += (e.touches[0].clientY - rect.top - mouse.y) * smoothing
 })
 canvas.addEventListener('touchend', () => {
   mouse.down = false
@@ -140,14 +166,12 @@ canvas.addEventListener('mousedown', e => {
     mouse.point.pinned = true
   }
 })
-
 canvas.addEventListener('mousemove', e => {
   const rect = canvas.getBoundingClientRect()
-  const slowPass = 0.1
-  mouse.x += (e.clientX - rect.left - mouse.x) * slowPass
-  mouse.y += (e.clientY - rect.top - mouse.y) * slowPass
+  const smoothing = 0.2
+  mouse.x += (e.clientX - rect.left - mouse.x) * smoothing
+  mouse.y += (e.clientY - rect.top - mouse.y) * smoothing
 })
-
 canvas.addEventListener('mouseup', () => {
   mouse.down = false
 
@@ -213,40 +237,40 @@ const clamp = (v, min = 0, max = 1) => Math.max(min, Math.min(max, v))
  * Requests permission to use DeviceMotionEvent.
  * Handles the iOS 13+ specific promise-based API and standard implementations.
  */
-async function requestMotionPermission() {
-  try {
-    // 1. Check if the environment supports DeviceMotionEvent
-    if (typeof DeviceMotionEvent === 'undefined') {
-      console.warn('DeviceMotionEvent is not supported on this device.');
-      return 'denied';
-    }
+// async function requestMotionPermission() {
+//   try {
+//     // 1. Check if the environment supports DeviceMotionEvent
+//     if (typeof DeviceMotionEvent === 'undefined') {
+//       console.warn('DeviceMotionEvent is not supported on this device.');
+//       return 'denied';
+//     }
 
-    // 2. Check for iOS 13+ permission API
-    // iOS 13+ requires a user gesture (click) to trigger this.
-    if (typeof DeviceMotionEvent.requestPermission === 'function') {
-      const permission = await DeviceMotionEvent.requestPermission();
-      return permission === 'granted' ? 'granted' : 'denied';
-    }
+//     // 2. Check for iOS 13+ permission API
+//     // iOS 13+ requires a user gesture (click) to trigger this.
+//     if (typeof DeviceMotionEvent.requestPermission === 'function') {
+//       const permission = await DeviceMotionEvent.requestPermission();
+//       return permission === 'granted' ? 'granted' : 'denied';
+//     }
 
-    // 3. Non-iOS devices (Android/Desktop)
-    // Usually do not require explicit permission requests, or handle them via browser prompts.
-    // We assume 'granted' if the API exists.
-    return 'granted';
-  } catch (error) {
-    console.error('Error requesting motion permission:', error);
-    return 'denied';
-  }
-}
+//     // 3. Non-iOS devices (Android/Desktop)
+//     // Usually do not require explicit permission requests, or handle them via browser prompts.
+//     // We assume 'granted' if the API exists.
+//     return 'granted';
+//   } catch (error) {
+//     console.error('Error requesting motion permission:', error);
+//     return 'denied';
+//   }
+// }
 
-function requestAccess() {
-  requestMotionPermission().then(permission => {
-    if (permission === 'granted') {
-      console.log('Motion permission granted');
-    } else {
-      console.log('Motion permission denied');
-    }
-  });
-}
+// function requestAccess() {
+//   requestMotionPermission().then(permission => {
+//     if (permission === 'granted') {
+//       console.log('Motion permission granted');
+//     } else {
+//       console.log('Motion permission denied');
+//     }
+//   });
+// }
 
 /**
  * Normalizes a vector {x, y, z} to length 1.
@@ -364,11 +388,14 @@ function initCloth({
 // Physics
 // ================================
 function getGravity() {
-  if (requestMotionPermission() !== 'granted') {
-    return { x: 0, y: SETTINGS.gravity }
-  }
+  // if (requestMotionPermission() !== 'granted') {
+  //   return { x: 0.1, y: SETTINGS.gravity }
+  // }
 
-  return { x: 0, y: 0 }
+  return {
+    x: -accelerometer.normalized.x * SETTINGS.gravity,
+    y: accelerometer.normalized.y * SETTINGS.gravity,
+  }
 }
 
 function applyForces() {
@@ -475,13 +502,18 @@ function applyMouse(applyFloor = true) {
   }
 }
 
+function updateDebugData() {
+  debug.setDebugData('mouse', mouse)
+  debug.setDebugData('accelerometer', accelerometer)
+}
+
 function update() {
   applyMouse(SETTINGS.showFloor)
   applyForces()
   integrate()
   satisfyConstraints()
 
-  debug.update()
+  updateDebugData()
 }
 
 
@@ -543,7 +575,7 @@ function renderMouse() {
   ctx.fill()
   ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'
   ctx.beginPath()
-  ctx.arc(mouse.point.x, mouse.point.y, 10, 0, Math.PI * 2)
+  ctx.arc(mouse.point.x, mouse.point.y, mouse.radius, 0, Math.PI * 2)
   ctx.fill()
 }
 
