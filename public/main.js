@@ -6,8 +6,38 @@ const SETTINGS = {
   friction: 0.97,
   constraintIterations: 8,
   pointSpacing: 20,
+  showFloor: true,
   floorOffset: 10, // percent of the canvas height
 }
+
+
+// ================================
+// Debug
+// ================================
+const debug = {
+  debugData: {},
+  element: document.getElementById('debug'),
+  setDebugText(data) {
+    this.element.textContent = JSON.stringify(data, null, 2)
+  },
+  clear() {
+    this.debugData = {}
+    this.update()
+  },
+  update() {
+    this.setDebugText(this.debugData)
+  },
+  setDebugData(key, value) {
+    this.debugData[key] = value
+    this.update()
+  },
+}
+
+
+// ================================
+// Floor
+// ================================
+let floorY = 0
 
 
 // ================================
@@ -15,16 +45,35 @@ const SETTINGS = {
 // ================================
 const canvas = document.getElementById('canvas')
 const ctx = canvas.getContext('2d')
-let floorY = 0
+
 
 function resizeCanvas() {
   canvas.width = window.innerWidth
   canvas.height = window.innerHeight
+
+  if (!SETTINGS.showFloor) return
   floorY = canvas.height - (canvas.height * SETTINGS.floorOffset) / 100
 }
 
 window.addEventListener('resize', resizeCanvas)
 resizeCanvas()
+
+
+// ================================
+// Accelerometer
+// ================================
+const accelerometer = {
+  x: 0,
+  y: 0,
+  z: 0,
+}
+function handleMotion(event) {
+  const acceleration = event.acceleration;
+  accelerometer.x = acceleration.x
+  accelerometer.y = acceleration.y
+  accelerometer.z = acceleration.z
+}
+window.addEventListener('devicemotion', handleMotion);
 
 
 // ================================
@@ -94,8 +143,9 @@ canvas.addEventListener('mousedown', e => {
 
 canvas.addEventListener('mousemove', e => {
   const rect = canvas.getBoundingClientRect()
-  mouse.x = e.clientX - rect.left
-  mouse.y = e.clientY - rect.top
+  const slowPass = 0.1
+  mouse.x += (e.clientX - rect.left - mouse.x) * slowPass
+  mouse.y += (e.clientY - rect.top - mouse.y) * slowPass
 })
 
 canvas.addEventListener('mouseup', () => {
@@ -158,6 +208,62 @@ function findNearestPoint(x, y, radius) {
 const range = n => [...Array(n).keys()]
 const clamp = (v, min = 0, max = 1) => Math.max(min, Math.min(max, v))
 
+
+/**
+ * Requests permission to use DeviceMotionEvent.
+ * Handles the iOS 13+ specific promise-based API and standard implementations.
+ */
+async function requestMotionPermission() {
+  try {
+    // 1. Check if the environment supports DeviceMotionEvent
+    if (typeof DeviceMotionEvent === 'undefined') {
+      console.warn('DeviceMotionEvent is not supported on this device.');
+      return 'denied';
+    }
+
+    // 2. Check for iOS 13+ permission API
+    // iOS 13+ requires a user gesture (click) to trigger this.
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      const permission = await DeviceMotionEvent.requestPermission();
+      return permission === 'granted' ? 'granted' : 'denied';
+    }
+
+    // 3. Non-iOS devices (Android/Desktop)
+    // Usually do not require explicit permission requests, or handle them via browser prompts.
+    // We assume 'granted' if the API exists.
+    return 'granted';
+  } catch (error) {
+    console.error('Error requesting motion permission:', error);
+    return 'denied';
+  }
+}
+
+function requestAccess() {
+  requestMotionPermission().then(permission => {
+    if (permission === 'granted') {
+      console.log('Motion permission granted');
+    } else {
+      console.log('Motion permission denied');
+    }
+  });
+}
+
+/**
+ * Normalizes a vector {x, y, z} to length 1.
+ * Useful for getting pure direction regardless of gravity magnitude.
+ */
+function normalizeVector(v) {
+  const length = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+
+  // Prevent division by zero
+  if (length === 0) return { x: 0, y: 0, z: 0 };
+
+  return {
+    x: v.x / length,
+    y: v.y / length,
+    z: v.z / length
+  };
+}
 
 // ================================
 // Rope initialization
@@ -257,6 +363,14 @@ function initCloth({
 // ================================
 // Physics
 // ================================
+function getGravity() {
+  if (requestMotionPermission() !== 'granted') {
+    return { x: 0, y: SETTINGS.gravity }
+  }
+
+  return { x: 0, y: 0 }
+}
+
 function applyForces() {
   points.forEach(p => {
     // Lock pinned
@@ -267,10 +381,12 @@ function applyForces() {
     }
 
     // Gravity
-    p.y += SETTINGS.gravity
+    const gravity = getGravity()
+    p.x += gravity.x
+    p.y += gravity.y
 
     // Floor
-    if (p.y >= floorY) {
+    if (SETTINGS.showFloor && p.y >= floorY) {
       p.y = floorY
       p.prevY = floorY
     }
@@ -360,10 +476,12 @@ function applyMouse(applyFloor = true) {
 }
 
 function update() {
-  applyMouse()
+  applyMouse(SETTINGS.showFloor)
   applyForces()
   integrate()
   satisfyConstraints()
+
+  debug.update()
 }
 
 
@@ -417,18 +535,25 @@ function renderFloor(ctx) {
 }
 
 function renderMouse() {
-  if (mouse.point) {
-    ctx.fillStyle = 'lime'
-    ctx.beginPath()
-    ctx.arc(mouse.point.x, mouse.point.y, 4, 0, Math.PI * 2)
-    ctx.fill()
-  }
+  if (!mouse.point) return
+
+  ctx.fillStyle = 'lime'
+  ctx.beginPath()
+  ctx.arc(mouse.point.x, mouse.point.y, 4, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'
+  ctx.beginPath()
+  ctx.arc(mouse.point.x, mouse.point.y, 10, 0, Math.PI * 2)
+  ctx.fill()
 }
 
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  renderFloor(ctx)
+  if (SETTINGS.showFloor) {
+    renderFloor(ctx)
+  }
+
   renderSimulation(ctx)
 
   renderMouse()

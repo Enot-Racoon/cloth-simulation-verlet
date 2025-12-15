@@ -4,6 +4,7 @@
   "devDependencies": {
     "@types/bun": "latest",
     "livereload": "^0.10.3",
+    "ngrok": "^5.0.0-beta.2",
     "serve": "^14.2.5"
   },
   "peerDependencies": {
@@ -11,7 +12,12 @@
   },
   "private": true,
   "scripts": {
-    "start": "bunx serve public"
+    "start": "bunx serve --port=3000 public",
+    "dev": "bunx live-server --port=3000 public",
+    "ngrok": "bunx ngrok http 3000"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "live-server": "^1.2.2"
+  }
 }
