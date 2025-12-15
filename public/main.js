@@ -8,6 +8,7 @@ const SETTINGS = {
   pointSpacing: 20,
   showFloor: false,
   floorOffset: 10, // percent of the canvas height
+
   mouseRadius: 10,
 }
 
