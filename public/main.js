@@ -66,9 +66,9 @@ const fpsMeter = {
   render(ctx) {
     ctx.save();
     ctx.font = "14px monospace";
-    ctx.fillStyle = "rgba(0, 255, 0, 0.8)";
+    ctx.fillStyle = "rgba(128, 128, 128, 0.8)";
     ctx.textAlign = "right";
-    ctx.fillText(`${this.v} FPS`, canvas.width - 20, 30);
+    ctx.fillText(`${this.v} FPS`, canvas.width - 10, 20);
     ctx.restore();
   },
 };
@@ -853,8 +853,8 @@ const m = 1;
 initCloth({
   startX: 4 * SETTINGS.pointSpacing,
   startY: 2 * SETTINGS.pointSpacing,
-  columns: Math.ceil(13 / m),
-  rows: Math.ceil(18 / m),
+  columns: Math.ceil(17 / m),
+  rows: Math.ceil(24 / m),
   pinTop: false,
   pinTopLeft: true,
   pinTopRight: true,
