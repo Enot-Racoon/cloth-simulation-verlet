@@ -1,41 +1,42 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Cloth Simulation - Verlet</title>
+    <style>
+      html,
+      body {
+        overscroll-behavior: contain;
+      }
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Cloth Simulation - Verlet</title>
-  <style>
-    html,
-    body {
-      overscroll-behavior: contain;
-    }
+      body {
+        margin: 0;
+        background: #111;
+        color: #fff;
+        font-family: sans-serif;
+      }
 
-    body {
-      margin: 0;
-      background: #111;
-      color: #fff;
-      font-family: sans-serif;
+      canvas {
+        display: block;
+      }
 
-    }
+      #debug {
+        zoom: 1.5;
+        position: absolute;
+        top: 2em;
+        right: 2em;
+        z-index: 1;
+      }
+    </style>
+  </head>
 
-    canvas {
-      display: block;
-    }
-
-    #debug {
-      position: absolute;
-      top: 2em;
-      left: 2em;
-      z-index: 1;
-    }
-  </style>
-</head>
-
-<body>
-  <canvas id="canvas"></canvas>
-  <pre id="debug"></pre>
-  <script src="main.js"></script>
-</body>
-
+  <body>
+    <canvas id="canvas"></canvas>
+    <pre id="debug"></pre>
+    <script type="module" src="main.js"></script>
+  </body>
 </html>
