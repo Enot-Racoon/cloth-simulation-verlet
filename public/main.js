@@ -11,7 +11,7 @@ const SETTINGS = {
 
   mouseRadius: 20,
 
-  textureImage: "texture-1099399_1280.jpg",
+  textureImage: "towelie.png",
 };
 
 // ================================
@@ -27,7 +27,7 @@ const MATERIALS = {
 // Debug
 // ================================
 const debug = {
-  showDebug: true,
+  showDebug: false,
   debugData: {},
   element: document.getElementById("debug"),
   setDebugText(data) {
@@ -101,13 +101,11 @@ resizeCanvas();
 
 const offscreenCanvas = new OffscreenCanvas(canvas.width, canvas.height);
 const offscreenCtx = offscreenCanvas.getContext("2d");
-let targetImgData = offscreenCtx.createImageData(canvas.width, canvas.height);
 
 function updateOffscreenSize() {
   offscreenCanvas.width = canvas.width;
   offscreenCanvas.height = canvas.height;
   offscreenCtx.imageSmoothingEnabled = false;
-  targetImgData = offscreenCtx.createImageData(canvas.width, canvas.height);
 }
 
 // ================================
@@ -356,153 +354,6 @@ const range = (n) => [...Array(n).keys()];
 
 const clamp = (v, min = 0, max = 1) => Math.max(min, Math.min(max, v));
 
-function edge(ax, ay, bx, by, px, py) {
-  return (px - ax) * (by - ay) - (py - ay) * (bx - ax);
-}
-
-function drawTriangle(ctx, p0, p1, p2) {
-  ctx.beginPath();
-  ctx.moveTo(p0.x, p0.y);
-  ctx.lineTo(p1.x, p1.y);
-  ctx.lineTo(p2.x, p2.y);
-  ctx.closePath();
-  ctx.fill();
-}
-
-function drawTexturedTriangle(
-  targetImgData,
-  srcImgData,
-  p0,
-  p1,
-  p2,
-  uv0,
-  uv1,
-  uv2,
-) {
-  // Sort vertices by y coordinate
-  let points = [
-    { x: Math.floor(p0.x), y: Math.floor(p0.y), u: uv0.u, v: uv0.v },
-    { x: Math.floor(p1.x), y: Math.floor(p1.y), u: uv1.u, v: uv1.v },
-    { x: Math.floor(p2.x), y: Math.floor(p2.y), u: uv2.u, v: uv2.v },
-  ].sort((a, b) => a.y - b.y);
-
-  const [top, mid, bot] = points;
-
-  // Draw top half (flat bottom)
-  if (mid.y > top.y) {
-    fillFlatBottomTriangle(targetImgData, srcImgData, top, mid, bot);
-  }
-
-  // Draw bottom half (flat top)
-  if (bot.y > mid.y) {
-    fillFlatTopTriangle(targetImgData, srcImgData, top, mid, bot);
-  }
-}
-
-function fillFlatBottomTriangle(targetImgData, srcImgData, top, mid, bot) {
-  const invSlope1 = (mid.x - top.x) / (mid.y - top.y);
-  const invSlope2 = (bot.x - top.x) / (bot.y - top.y);
-
-  let x1 = top.x,
-    x2 = top.x;
-
-  for (let y = Math.ceil(top.y); y <= Math.floor(mid.y); y++) {
-    const t1 = (y - top.y) / (mid.y - top.y);
-    const t2 = (y - top.y) / (bot.y - top.y);
-
-    const u1 = top.u + (mid.u - top.u) * t1;
-    const v1 = top.v + (mid.v - top.v) * t1;
-    const u2 = top.u + (bot.u - top.u) * t2;
-    const v2 = top.v + (bot.v - top.v) * t2;
-
-    drawScanline(
-      targetImgData,
-      srcImgData,
-      Math.ceil(x1),
-      Math.ceil(x2),
-      y,
-      u1,
-      v1,
-      u2,
-      v2,
-    );
-
-    x1 += invSlope1;
-    x2 += invSlope2;
-  }
-}
-
-function fillFlatTopTriangle(targetImgData, srcImgData, top, mid, bot) {
-  const invSlope1 = (bot.x - top.x) / (bot.y - top.y);
-  const invSlope2 = (bot.x - mid.x) / (bot.y - mid.y);
-
-  let x1 = bot.x,
-    x2 = bot.x;
-
-  for (let y = Math.floor(bot.y); y > Math.ceil(mid.y); y--) {
-    const t1 = (bot.y - y) / (bot.y - top.y);
-    const t2 = (bot.y - y) / (bot.y - mid.y);
-
-    const u1 = bot.u + (top.u - bot.u) * t1;
-    const v1 = bot.v + (top.v - bot.v) * t1;
-    const u2 = bot.u + (mid.u - bot.u) * t2;
-    const v2 = bot.v + (mid.v - bot.v) * t2;
-
-    drawScanline(
-      targetImgData,
-      srcImgData,
-      Math.ceil(x1),
-      Math.ceil(x2),
-      y,
-      u1,
-      v1,
-      u2,
-      v2,
-    );
-
-    x1 -= invSlope1;
-    x2 -= invSlope2;
-  }
-}
-
-function drawScanline(targetImgData, srcImgData, x1, x2, y, u1, v1, u2, v2) {
-  if (y < 0 || y >= targetImgData.height) return;
-
-  if (x1 > x2) {
-    [x1, x2] = [x2, x1];
-    [u1, u2] = [u2, u1];
-    [v1, v2] = [v2, v1];
-  }
-
-  const width = x2 - x1;
-  if (width === 0) return;
-
-  for (let x = x1; x <= x2; x++) {
-    if (x < 0 || x >= targetImgData.width) continue;
-
-    const t = (x - x1) / width;
-    const u = u1 + (u2 - u1) * t;
-    const v = v1 + (v2 - v1) * t;
-
-    const tx = Math.floor(u * (srcImgData.width - 1));
-    const ty = Math.floor(v * (srcImgData.height - 1));
-    const srcIdx = (ty * srcImgData.width + tx) * 4;
-
-    const r = srcImgData.data[srcIdx];
-    const g = srcImgData.data[srcIdx + 1];
-    const b = srcImgData.data[srcIdx + 2];
-    const a = srcImgData.data[srcIdx + 3];
-
-    // render through canvas imagedata
-    const targetIdx = (y * targetImgData.width + x) * 4;
-
-    targetImgData.data[targetIdx] = r;
-    targetImgData.data[targetIdx + 1] = g;
-    targetImgData.data[targetIdx + 2] = b;
-    targetImgData.data[targetIdx + 3] = a;
-  }
-}
-
 /**
  * Requests permission to use DeviceMotionEvent.
  * Handles the iOS 13+ specific promise-based API and standard implementations.
@@ -749,37 +600,42 @@ function satisfyConstraints() {
       // tear
       if (dist > c.tearLength) {
         // remove face
-        const tearFaces = faces.filter(
-          (f) => [c.i1, c.i2].every((i) => [f.i1, f.i2, f.i3].includes(i)),
-          // [f.i1, f.i2, f.i3].some((i) => i === c.i1 || i === c.i2),
+        const tearFaces = faces.filter((f) =>
+          [c.i1, c.i2].every((i) => [f.i1, f.i2, f.i3].includes(i)),
         );
         tearFaces.forEach((face) => {
           faces.splice(faces.indexOf(face), 1);
         });
+
+        // remove constraint
         constraints.splice(k, 1);
         k--;
         continue;
       }
 
+      if (dist <= c.restLength) continue;
+
       // compute and apply correction based on pinned state
-      const stretch = dist / c.restLength;
-      const computeStiffness = (stretch) => {
-        let res = 1 * SETTINGS.friction;
-        if (stretch > 1) res = (1 - stretch) * 0.8;
-
-        return clamp(res, 0.7, 1.1);
-      };
-      const stiffness = computeStiffness(stretch);
-
+      let stiffness;
+      if (dist > c.restLength) {
+        // Sprain is a strong correction
+        const stretch = dist / c.restLength;
+        stiffness = clamp(1.0 - (stretch - 1.0) * 0.3, 0.7, 1.1);
+      } else {
+        // Compression - weak correction (10%)
+        stiffness = 0.1;
+      }
       const correction = (dist - c.restLength) / dist;
       const cx = dx * correction * stiffness;
       const cy = dy * correction * stiffness;
 
       debug.setDebugData("cx/cy", {
+        dist: dist.toFixed(2).padStart(5, "+"),
         cx: cx.toFixed(2).padStart(5, "+"),
         cy: cy.toFixed(2).padStart(5, "+"),
       });
 
+      // continue;
       if (!p1.pinned && !p2.pinned) {
         p1.x += cx * 0.5;
         p1.y += cy * 0.5;
@@ -838,61 +694,54 @@ function stressColor(t) {
 }
 
 function renderFaces(ctx) {
-  if (!isTextureImageLoaded) {
-    return;
-  }
+  if (!isTextureImageLoaded) return;
 
-  // Clear target buffer (set alpha to 0)
-  targetImgData.data.fill(0);
+  ctx.save();
 
   for (const f of faces) {
     const p1 = points[f.i1];
     const p2 = points[f.i2];
     const p3 = points[f.i3];
-    // const p4 = points[f.i4];
 
-    /*
-   p1 -- p2
-     \   |
-      \  |
-       \ |
-        \|
-         p3
+    // Calculate UV coordinates in pixels
+    const u1 = f.uv1.u * textureImage.width;
+    const v1 = f.uv1.v * textureImage.height;
+    const u2 = f.uv2.u * textureImage.width;
+    const v2 = f.uv2.v * textureImage.height;
+    const u3 = f.uv3.u * textureImage.width;
+    const v3 = f.uv3.v * textureImage.height;
 
-    p1
-     |\
-     | \
-     |  \
-     |   \
-    p4 -- p3
-    */
+    // Using the canvas transformation
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.closePath();
+    ctx.clip();
 
-    drawTexturedTriangle(
-      targetImgData,
-      textureData,
-      p1,
-      p2,
-      p3,
-      f.uv1,
-      f.uv2,
-      f.uv3,
-    );
+    // Calculating affine transformation
+    const denom = (u1 - u3) * (v2 - v3) - (u2 - u3) * (v1 - v3);
+    if (Math.abs(denom) > 0.0001) {
+      const m11 =
+        ((p1.x - p3.x) * (v2 - v3) - (p2.x - p3.x) * (v1 - v3)) / denom;
+      const m12 =
+        ((p1.y - p3.y) * (v2 - v3) - (p2.y - p3.y) * (v1 - v3)) / denom;
+      const m21 =
+        ((u1 - u3) * (p2.x - p3.x) - (u2 - u3) * (p1.x - p3.x)) / denom;
+      const m22 =
+        ((u1 - u3) * (p2.y - p3.y) - (u2 - u3) * (p1.y - p3.y)) / denom;
+      const dx = p3.x - m11 * u3 - m21 * v3;
+      const dy = p3.y - m12 * u3 - m22 * v3;
 
-    // drawTexturedTriangle(
-    //   ctx,
-    //   targetImgData,
-    //   textureData,
-    //   p3,
-    //   p4,
-    //   p1,
-    //   f.uv3,
-    //   f.uv4,
-    //   f.uv1
-    // );
+      ctx.transform(m11, m12, m21, m22, dx, dy);
+      ctx.drawImage(textureImage, 0, 0);
+    }
+
+    ctx.restore();
   }
 
-  offscreenCtx.putImageData(targetImgData, 0, 0);
-  ctx.drawImage(offscreenCanvas, 0, 0);
+  ctx.restore();
 }
 
 function renderSimulation(ctx) {
@@ -1000,7 +849,7 @@ function loop() {
 //   segmentCount: 50,
 //   segmentLength: SETTINGS.pointSpacing,
 // });
-const m = 2;
+const m = 1;
 initCloth({
   startX: 4 * SETTINGS.pointSpacing,
   startY: 2 * SETTINGS.pointSpacing,
@@ -1009,7 +858,7 @@ initCloth({
   pinTop: false,
   pinTopLeft: true,
   pinTopRight: true,
-  // pinTopCenter: true,
+  pinTopCenter: true,
   segmentLength: SETTINGS.pointSpacing * 2 * m,
 });
 void requestAnimationFrame(loop);
