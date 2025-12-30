@@ -853,7 +853,7 @@ const m = 1;
 initCloth({
   startX: 4 * SETTINGS.pointSpacing,
   startY: 2 * SETTINGS.pointSpacing,
-  columns: Math.ceil(12 / m),
+  columns: Math.ceil(13 / m),
   rows: Math.ceil(18 / m),
   pinTop: false,
   pinTopLeft: true,
