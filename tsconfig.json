@@ -1,32 +1,28 @@
 {
   "compilerOptions": {
-    // Environment setup & latest features
+    "target": "ES2020",
+    "useDefineForClassFields": true,
     "lib": [
-      "ESNext",
-      "dom"
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
     ],
-    "target": "ESNext",
-    "module": "Preserve",
-    "moduleDetection": "force",
-    "jsx": "react-jsx",
-    "allowJs": true,
-
-    // Bundler mode
+    "module": "ESNext",
+    "skipLibCheck": true,
+    /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "noEmit": true,
-
-    // Best practices
+    "jsx": "react-jsx",
+    /* Linting */
     "strict": true,
-    "skipLibCheck": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-
-    // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  }
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": [
+    "src"
+  ]
 }

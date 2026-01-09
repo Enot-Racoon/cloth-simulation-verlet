@@ -1,24 +1,18 @@
 {
   "name": "cloth-simulation-verlet",
-  "module": "index.ts",
-  "devDependencies": {
-    "@types/bun": "latest",
-    "livereload": "^0.10.3",
-    "ngrok": "^5.0.0-beta.2",
-    "prettier": "^3.7.4",
-    "serve": "^14.2.5"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
   "private": true,
-  "scripts": {
-    "start": "bunx serve --port=3000 public",
-    "dev": "bunx live-server --port=3000 public",
-    "ngrok": "bunx ngrok http 3000"
-  },
+  "version": "0.0.0",
   "type": "module",
-  "dependencies": {
-    "live-server": "^1.2.2"
-  }
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "start": "vite preview --port=3000"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.0"
+  },
+  "dependencies": {}
 }
