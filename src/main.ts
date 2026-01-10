@@ -4,6 +4,8 @@ import { Renderer } from './core/renderer';
 import { ObjectInitializer } from './core/initializers';
 import { DebugManager } from './core/debug';
 import { SETTINGS } from './core/settings';
+import { SimulationManager } from './core/SimulationManager';
+import { SoftBody, Chain } from './objects';
 
 // ================================
 // Main Application Class
@@ -15,6 +17,7 @@ class ClothSimulationApp {
   private renderer: Renderer;
   private initializer: ObjectInitializer;
   private debug: DebugManager;
+  private simulationManager: SimulationManager;
   private animationId: number | null = null;
 
   constructor() {
@@ -27,6 +30,7 @@ class ClothSimulationApp {
     this.renderer = new Renderer(this.canvas, this.physics);
     this.initializer = new ObjectInitializer(this.physics);
     this.debug = new DebugManager();
+    this.simulationManager = new SimulationManager(this.physics);
 
     // Setup canvas resizing
     this.setupCanvas();
@@ -52,17 +56,36 @@ class ClothSimulationApp {
 
   private initializeObjects(): void {
     const m = 1;
-    this.initializer.initCloth({
-      startX: 4 * SETTINGS.pointSpacing,
-      startY: 2 * SETTINGS.pointSpacing,
-      columns: Math.ceil(17 / m),
-      rows: Math.ceil(24 / m),
-      pinTop: false,
-      pinTopLeft: true,
-      pinTopRight: true,
-      pinTopCenter: true,
-      segmentLength: SETTINGS.pointSpacing * 2 * m,
-    });
+    // this.initializer.initCloth({
+    //   startX: 4 * SETTINGS.pointSpacing,
+    //   startY: 2 * SETTINGS.pointSpacing,
+    //   columns: Math.ceil(17 / m),
+    //   rows: Math.ceil(24 / m),
+    //   pinTop: false,
+    //   pinTopLeft: true,
+    //   pinTopRight: true,
+    //   pinTopCenter: true,
+    //   segmentLength: SETTINGS.pointSpacing * 2 * m,
+    // });
+
+    // Add a soft body object
+    const softBody = new SoftBody(
+      window.innerWidth / 2,
+      window.innerHeight / 3,
+      50,
+      12 * 2
+    );
+    this.simulationManager.addObject(softBody);
+
+    // Add a chain object
+    // const chain = new Chain(
+    //   window.innerWidth / 3,
+    //   100,
+    //   40,
+    //   16,
+    //   0.8
+    // );
+    // this.simulationManager.addObject(chain);
   }
 
   private update = (): void => {
@@ -76,6 +99,9 @@ class ClothSimulationApp {
     // Update physics
     this.physics.update();
 
+    // Update simulation objects
+    this.simulationManager.update(1 / 60); // Assuming ~60fps
+
     // Update debug info
     this.debug.updateDebugData(
       this.physics.getPoints().length,
@@ -87,6 +113,12 @@ class ClothSimulationApp {
   private render = (): void => {
     // Clear and render scene
     this.renderer.render();
+
+    // Render simulation objects
+    const ctx = this.renderer.getContext(); // We need to add this method to Renderer
+    if (ctx) {
+      this.simulationManager.render(ctx);
+    }
 
     // Render mouse interaction
     this.renderer.renderMouse(this.input.getMouse());

@@ -46,8 +46,8 @@ export class InputManager {
 
     this.mouse.point.x = this.mouse.x;
     this.mouse.point.y = this.mouse.y;
-    this.mouse.point.prevX = this.mouse.x;
-    this.mouse.point.prevY = this.mouse.y;
+    // this.mouse.point.prevX = this.mouse.x;
+    // this.mouse.point.prevY = this.mouse.y;
 
     if (SETTINGS.showFloor && this.mouse.y >= this.physics.getFloorY()) {
       this.mouse.point.y = this.physics.getFloorY();

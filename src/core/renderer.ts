@@ -13,6 +13,8 @@ export class Renderer {
   private isTextureLoaded = false;
   private textureImage: HTMLImageElement;
   private textureData: Uint8ClampedArray;
+  private renderPoints = true;
+  private renderConstraints = true;
 
   constructor(canvas: HTMLCanvasElement, physics: PhysicsEngine) {
     this.canvas = canvas;
@@ -64,6 +66,10 @@ export class Renderer {
     } catch (error) {
       console.warn('Texture loading failed, continuing without texture');
     }
+  }
+
+  getContext(): CanvasRenderingContext2D {
+    return this.ctx;
   }
 
   render(): void {
@@ -158,7 +164,7 @@ export class Renderer {
 
       const t = clamp((dist - c.restLength) / (c.tearLength - c.restLength));
 
-      if (t < 0.3) continue;
+      if (t < (this.renderConstraints ? 0 : 0.3)) continue;
 
       this.ctx.strokeStyle = this.stressColor(t);
 
@@ -169,11 +175,16 @@ export class Renderer {
     }
 
     // Render pinned points
-    this.ctx.fillStyle = "#002ffb";
     for (const p of points) {
       if (p.pinned) {
+        this.ctx.fillStyle = "#002ffb";
         this.ctx.beginPath();
-        this.ctx.arc(p.x, p.y, this.ctx.lineWidth, 0, Math.PI * 2);
+        this.ctx.arc(p.x, p.y, this.ctx.lineWidth + 2, 0, Math.PI * 2);
+        this.ctx.fill();
+      } else if (this.renderPoints) {
+        this.ctx.fillStyle = "#ff06b9";
+        this.ctx.beginPath();
+        this.ctx.arc(p.x, p.y, this.ctx.lineWidth + 2, 0, Math.PI * 2);
         this.ctx.fill();
       }
     }

@@ -27,7 +27,7 @@ export class ObjectInitializer {
 
     // Create points
     const ropePoints = range(segmentCount).map((i) =>
-      this.physics.addPoint(
+      this.physics.createPoint(
         startX + (horizontal ? i * segmentLength : 0),
         startY + (horizontal ? 0 : i * segmentLength),
         (pinFirst && i === 0) || (pinLast && i === segmentCount - 1),
@@ -35,14 +35,14 @@ export class ObjectInitializer {
     );
 
     // Create constraints
-    range(segmentCount - 1).forEach((i) => {
-      this.physics.addConstraint(
+    const ropeConstraints = range(segmentCount - 1).map((i) =>
+      this.physics.createConstraint(
         baseIndex + i,
         baseIndex + i + 1,
         segmentLength,
         MATERIALS.rope.tearMultiplier,
-      );
-    });
+      )
+    );
   }
 
   initCloth(options: ClothOptions): void {
@@ -61,15 +61,15 @@ export class ObjectInitializer {
     const baseIndex = this.physics.getPoints().length;
 
     // Create points
-    range(rows).forEach((i) =>
-      range(columns).forEach((j) => {
+    const clothPoints = range(rows).map((i) =>
+      range(columns).map((j) => {
         let pinned = false;
         if (pinTop && i === 0) pinned = true;
         if (pinTopLeft && i === 0 && j === 0) pinned = true;
         if (pinTopRight && i === 0 && j === columns - 1) pinned = true;
         if (pinTopCenter && i === 0 && j === Math.floor(columns / 2)) pinned = true;
 
-        this.physics.addPoint(
+        return this.physics.createPoint(
           startX + j * segmentLength,
           startY + i * segmentLength,
           pinned,
@@ -78,10 +78,10 @@ export class ObjectInitializer {
     );
 
     // Create faces
-    range(rows - 1).forEach((i) =>
-      range(columns - 1).forEach((j) => {
+    const clothFaces = range(rows - 1).flatMap((i) =>
+      range(columns - 1).map((j) => {
         // Two triangles per quad
-        this.physics.addFace(
+        this.physics.createFace(
           baseIndex + i * columns + j,
           baseIndex + i * columns + j + 1,
           baseIndex + (i + 1) * columns + j + 1,
@@ -90,7 +90,7 @@ export class ObjectInitializer {
           { u: (j + 1) / (columns - 1), v: (i + 1) / (rows - 1) },
         );
 
-        this.physics.addFace(
+        this.physics.createFace(
           baseIndex + (i + 1) * columns + j + 1,
           baseIndex + (i + 1) * columns + j,
           baseIndex + i * columns + j,
@@ -102,9 +102,9 @@ export class ObjectInitializer {
     );
 
     // Create horizontal constraints
-    range(rows).forEach((i) =>
-      range(columns - 1).forEach((j) =>
-        this.physics.addConstraint(
+    const clothHorisontalConstraints = range(rows).flatMap((i) =>
+      range(columns - 1).map((j) =>
+        this.physics.createConstraint(
           baseIndex + i * columns + j,
           baseIndex + i * columns + j + 1,
           segmentLength,
@@ -114,9 +114,9 @@ export class ObjectInitializer {
     );
 
     // Create vertical constraints
-    range(rows - 1).forEach((i) =>
-      range(columns).forEach((j) =>
-        this.physics.addConstraint(
+    const clothVerticalConstraints = range(rows - 1).flatMap((i) =>
+      range(columns).map((j) =>
+        this.physics.createConstraint(
           baseIndex + i * columns + j,
           baseIndex + (i + 1) * columns + j,
           segmentLength,

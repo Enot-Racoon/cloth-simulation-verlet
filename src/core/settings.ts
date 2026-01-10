@@ -8,7 +8,7 @@ export const SETTINGS: Settings = {
   friction: 0.97,
   constraintIterations: 8,
   pointSpacing: 20,
-  showFloor: false,
+  showFloor: true,
   floorOffset: 10, // percent of the canvas height
   mouseRadius: 20,
   textureImage: "towelie.png",

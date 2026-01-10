@@ -28,10 +28,23 @@ export class PhysicsEngine {
   getFloorY(): number { return this.floorY; }
 
   // Point management
-  addPoint(x: number, y: number, pinned = false): Point {
+  createPoint(x: number, y: number, pinned = false): Point {
     const point: Point = { x, y, prevX: x, prevY: y, pinned };
     this.points.push(point);
     return point;
+  }
+
+  registerPoint(point: Point): Point {
+    this.points.push(point);
+    return point;
+  }
+
+
+  unregisterPoint(point: Point): void {
+    const index = this.points.indexOf(point);
+    if (index > -1) {
+      this.points.splice(index, 1);
+    }
   }
 
   findNearestPoint(x: number, y: number, radius: number): Point | null {
@@ -53,7 +66,7 @@ export class PhysicsEngine {
   }
 
   // Constraint management
-  addConstraint(i1: number, i2: number, restLength: number, tearMultiplier: number): Constraint {
+  createConstraint(i1: number, i2: number, restLength: number, tearMultiplier: number): Constraint {
     const constraint: Constraint = {
       i1,
       i2,
@@ -64,11 +77,35 @@ export class PhysicsEngine {
     return constraint;
   }
 
+  registerConstraint(constraint: Constraint): Constraint {
+    this.constraints.push(constraint);
+    return constraint;
+  }
+
+  unregisterConstraint(constraint: Constraint): void {
+    const index = this.constraints.indexOf(constraint);
+    if (index > -1) {
+      this.constraints.splice(index, 1);
+    }
+  }
+
   // Face management
-  addFace(i1: number, i2: number, i3: number, uv1: { u: number, v: number }, uv2: { u: number, v: number }, uv3: { u: number, v: number }): Face {
+  createFace(i1: number, i2: number, i3: number, uv1: { u: number, v: number }, uv2: { u: number, v: number }, uv3: { u: number, v: number }): Face {
     const face: Face = { i1, i2, i3, uv1, uv2, uv3 };
     this.faces.push(face);
     return face;
+  }
+
+  registerFace(face: Face): Face {
+    this.faces.push(face);
+    return face;
+  }
+
+  unregisterFace(face: Face): void {
+    const index = this.faces.indexOf(face);
+    if (index > -1) {
+      this.faces.splice(index, 1);
+    }
   }
 
   // Physics simulation
@@ -115,6 +152,7 @@ export class PhysicsEngine {
       // For each constraint
       for (let k = 0; k < this.constraints.length; k++) {
         const c = this.constraints[k];
+
         const p1 = this.points[c.i1];
         const p2 = this.points[c.i2];
 
@@ -125,7 +163,7 @@ export class PhysicsEngine {
         if (dist === 0) continue;
 
         // Tear constraint
-        if (dist > c.tearLength) {
+        if (!!c.tearLength && dist > c.tearLength) {
           // Remove faces that use this constraint
           const tearFaces = this.faces.filter((f) =>
             [c.i1, c.i2].every((i) => [f.i1, f.i2, f.i3].includes(i)),
@@ -141,7 +179,7 @@ export class PhysicsEngine {
           continue;
         }
 
-        if (dist <= c.restLength) continue;
+        if (!c.tearLength && dist <= c.restLength) continue;
 
         // Compute correction based on pin state
         let stiffness;
@@ -165,11 +203,11 @@ export class PhysicsEngine {
           p2.x -= cx * 0.5;
           p2.y -= cy * 0.5;
         } else if (p1.pinned && !p2.pinned) {
-          p2.x -= cx * 2;
-          p2.y -= cy * 2;
+          p2.x -= cx
+          p2.y -= cy;
         } else if (!p1.pinned && p2.pinned) {
-          p1.x += cx * 2;
-          p1.y += cy * 2;
+          p1.x += cx;
+          p1.y += cy;
         }
       }
     }
