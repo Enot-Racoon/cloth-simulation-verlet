@@ -1,5 +1,5 @@
-import { Point, Constraint, Face, UV } from '../types';
-import { SkeletonBase } from '../core/SkeletonObject';
+import { Point, Constraint, Face, UV } from "../types";
+import { SkeletonBase } from "../core/SkeletonObject";
 
 // ================================
 // Soft Body object implementation
@@ -12,7 +12,12 @@ export class SoftBody extends SkeletonBase {
   private radius: number;
   private segments: number;
 
-  constructor(centerX: number, centerY: number, radius: number, segments: number) {
+  constructor(
+    centerX: number,
+    centerY: number,
+    radius: number,
+    segments: number
+  ) {
     super();
     this.centerX = centerX;
     this.centerY = centerY;
@@ -22,7 +27,7 @@ export class SoftBody extends SkeletonBase {
   }
 
   private createCircularBody(): void {
-    // Create points in a circular pattern
+    // Create points in a inner circle
     for (let i = 0; i < this.segments; i++) {
       const angle = (i / this.segments) * Math.PI * 2;
       const x = this.centerX + Math.cos(angle) * this.radius;
@@ -30,7 +35,16 @@ export class SoftBody extends SkeletonBase {
       this.addPoint(x, y);
     }
 
-    // Create constraints between adjacent points
+    // Create points in a outer circle
+    // for (let i = 0; i < this.segments; i++) {
+    //   const angle = (i / this.segments) * Math.PI * 2;
+    //   const r = this.radius * 2;
+    //   const x = this.centerX + Math.cos(angle) * r;
+    //   const y = this.centerY + Math.sin(angle) * r;
+    //   this.addPoint(x, y);
+    // }
+
+    // Create constraints between inner circle points
     for (let i = 0; i < this.segments; i++) {
       const nextIndex = (i + 1) % this.segments;
       const p1 = this.points[i];
@@ -42,10 +56,51 @@ export class SoftBody extends SkeletonBase {
       this.addConstraint(i, nextIndex, restLength, 0);
     }
 
+    // Create constraints between outer circle points
+    // for (let i = 0; i < this.segments; i++) {
+    //   const nextIndex = (i + 1) % this.segments;
+    //   const p1 = this.points[i + this.segments];
+    //   const p2 = this.points[nextIndex + this.segments];
+    //   const restLength = Math.sqrt(
+    //     Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2)
+    //   );
+
+    //   this.addConstraint(
+    //     i + this.segments,
+    //     nextIndex + this.segments,
+    //     restLength,
+    //     0
+    //   );
+    // }
+
+    // Create constraints between inner and outer circle points
+    // for (let i = 0; i < this.segments; i++) {
+    //   const p1 = this.points[i];
+    //   const p2 = this.points[i + this.segments];
+    //   const restLength = Math.sqrt(
+    //     Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2)
+    //   );
+
+    //   this.addConstraint(i, i + this.segments, restLength, 0);
+
+    //   this.addConstraint(
+    //     i,
+    //     ((i + 1) % this.segments) + this.segments,
+    //     restLength,
+    //     0
+    //   );
+    //   this.addConstraint(
+    //     i,
+    //     ((i + this.segments - 1) % this.segments) + this.segments,
+    //     restLength,
+    //     0
+    //   );
+    // }
+
     // Add internal structure for stability
     const centerIndex = this.points.length; // Index of the center point
     // Add center point if it doesn't exist yet
-    this.addPoint(this.centerX, this.centerY, true);
+    this.addPoint(this.centerX, this.centerY, false);
     for (let i = 0; i < this.segments; i++) {
       // Connect each point to the center
       const p = this.points[i];
@@ -69,7 +124,7 @@ export class SoftBody extends SkeletonBase {
     }
 
     ctx.closePath();
-    ctx.strokeStyle = 'rgba(100, 150, 255, 0.8)';
+    ctx.strokeStyle = "rgba(100, 150, 255, 0.8)";
     ctx.lineWidth = 2;
     ctx.stroke();
 
@@ -80,7 +135,7 @@ export class SoftBody extends SkeletonBase {
       ctx.moveTo(this.points[i].x, this.points[i].y);
       ctx.lineTo(this.points[centerIndex].x, this.points[centerIndex].y);
     }
-    ctx.strokeStyle = 'rgba(100, 150, 255, 0.4)';
+    ctx.strokeStyle = "rgba(100, 150, 255, 0.4)";
     ctx.lineWidth = 1;
     ctx.stroke();
   }

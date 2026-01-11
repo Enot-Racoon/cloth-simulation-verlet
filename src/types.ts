@@ -2,6 +2,13 @@
 // Type definitions for cloth simulation
 // ================================
 
+export interface FloorSegment {
+  x1: number;
+  x2: number;
+  y1: number;
+  y2: number;
+}
+
 export interface Vector2D {
   x: number;
   y: number;
@@ -24,6 +31,13 @@ export interface Constraint {
   i2: number;
   restLength: number;
   tearLength: number;
+}
+
+export interface ConstraintBehavior {
+  compliance: number
+  damping?: number
+  plasticity?: number
+  breakStress?: number
 }
 
 export interface UV {

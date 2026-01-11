@@ -1,11 +1,11 @@
-import { PhysicsEngine } from './core/physics';
-import { InputManager } from './core/input';
-import { Renderer } from './core/renderer';
-import { ObjectInitializer } from './core/initializers';
-import { DebugManager } from './core/debug';
-import { SETTINGS } from './core/settings';
-import { SimulationManager } from './core/SimulationManager';
-import { SoftBody, Chain } from './objects';
+import { PhysicsEngine } from "./core/physics";
+import { InputManager } from "./core/input";
+import { Renderer } from "./core/renderer";
+import { ObjectInitializer } from "./core/initializers";
+import { DebugManager } from "./core/debug";
+import { SETTINGS } from "./core/settings";
+import { SimulationManager } from "./core/SimulationManager";
+import { SoftBody, Chain } from "./objects";
 
 // ================================
 // Main Application Class
@@ -46,8 +46,9 @@ class ClothSimulationApp {
     const resizeCanvas = () => {
       this.canvas.width = window.innerWidth;
       this.canvas.height = window.innerHeight;
-      SETTINGS.pointSpacing = Math.min(this.canvas.width, this.canvas.height) / 40;
-      this.physics.updateFloor();
+      SETTINGS.pointSpacing =
+        Math.min(this.canvas.width, this.canvas.height) / 40;
+      this.physics.generateFloor();
     };
 
     window.addEventListener("resize", resizeCanvas);
@@ -71,9 +72,9 @@ class ClothSimulationApp {
     // Add a soft body object
     const softBody = new SoftBody(
       window.innerWidth / 2,
-      window.innerHeight / 3,
+      (window.innerHeight / 5) * 3.3,
       50,
-      12 * 2
+      13
     );
     this.simulationManager.addObject(softBody);
 
@@ -101,6 +102,9 @@ class ClothSimulationApp {
 
     // Update simulation objects
     this.simulationManager.update(1 / 60); // Assuming ~60fps
+
+    // Apply boundary conditions
+    this.physics.applyBoundaryConditions();
 
     // Update debug info
     this.debug.updateDebugData(
@@ -151,8 +155,8 @@ class ClothSimulationApp {
 let app: ClothSimulationApp | null = null;
 
 // Initialize when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
 } else {
   init();
 }
@@ -160,211 +164,3 @@ if (document.readyState === 'loading') {
 function init(): void {
   app = new ClothSimulationApp();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

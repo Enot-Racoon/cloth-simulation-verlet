@@ -1,6 +1,6 @@
-import { Mouse, AccelerometerData } from '../types';
-import { PhysicsEngine, normalizeVector } from './physics';
-import { SETTINGS } from './settings';
+import { Mouse, AccelerometerData } from "../types";
+import { PhysicsEngine, normalizeVector } from "./physics";
+import { SETTINGS } from "./settings";
 
 // ================================
 // Input handling
@@ -31,8 +31,12 @@ export class InputManager {
     this.setupEventListeners();
   }
 
-  getMouse(): Mouse { return this.mouse; }
-  getAccelerometer(): AccelerometerData { return this.accelerometer; }
+  getMouse(): Mouse {
+    return this.mouse;
+  }
+  getAccelerometer(): AccelerometerData {
+    return this.accelerometer;
+  }
 
   getGravity(): { x: number; y: number } {
     return {
@@ -46,12 +50,15 @@ export class InputManager {
 
     this.mouse.point.x = this.mouse.x;
     this.mouse.point.y = this.mouse.y;
-    // this.mouse.point.prevX = this.mouse.x;
-    // this.mouse.point.prevY = this.mouse.y;
+    this.mouse.point.prevX = this.mouse.x;
+    this.mouse.point.prevY = this.mouse.y;
 
-    if (SETTINGS.showFloor && this.mouse.y >= this.physics.getFloorY()) {
-      this.mouse.point.y = this.physics.getFloorY();
-      this.mouse.point.prevY = this.physics.getFloorY();
+    if (SETTINGS.showFloor) {
+      const floorY = this.physics.getFloorYAt(this.mouse.x);
+      if (this.mouse.y >= floorY) {
+        this.mouse.point.y = floorY;
+        this.mouse.point.prevY = floorY;
+      }
     }
   }
 
@@ -84,7 +91,11 @@ export class InputManager {
       this.mouse.y += (y - this.mouse.y) * smoothing;
 
       if (!this.mouse.down) {
-        this.mouse.point = this.physics.findNearestPoint(x, y, this.mouse.radius);
+        this.mouse.point = this.physics.findNearestPoint(
+          x,
+          y,
+          this.mouse.radius
+        );
       }
     });
 
@@ -125,7 +136,11 @@ export class InputManager {
       this.mouse.y += (y - this.mouse.y) * smoothing;
 
       if (!this.mouse.down) {
-        this.mouse.point = this.physics.findNearestPoint(x, y, this.mouse.radius);
+        this.mouse.point = this.physics.findNearestPoint(
+          x,
+          y,
+          this.mouse.radius
+        );
       }
     });
 
@@ -167,19 +182,24 @@ export class InputManager {
     this.accelerometer.raw = { x, y, z };
 
     // Low pass filter
-    this.accelerometer.filtered.x += (x - this.accelerometer.filtered.x) * smoothing;
-    this.accelerometer.filtered.y += (y - this.accelerometer.filtered.y) * smoothing;
-    this.accelerometer.filtered.z += (z - this.accelerometer.filtered.z) * smoothing;
+    this.accelerometer.filtered.x +=
+      (x - this.accelerometer.filtered.x) * smoothing;
+    this.accelerometer.filtered.y +=
+      (y - this.accelerometer.filtered.y) * smoothing;
+    this.accelerometer.filtered.z +=
+      (z - this.accelerometer.filtered.z) * smoothing;
 
     // Normalize
     const magnitude = Math.sqrt(
       this.accelerometer.filtered.x * this.accelerometer.filtered.x +
-      this.accelerometer.filtered.y * this.accelerometer.filtered.y,
+        this.accelerometer.filtered.y * this.accelerometer.filtered.y
     );
 
     const threshold = 1.0;
     if (magnitude > threshold) {
-      this.accelerometer.normalized = normalizeVector(this.accelerometer.filtered);
+      this.accelerometer.normalized = normalizeVector(
+        this.accelerometer.filtered
+      );
     } else {
       this.accelerometer.normalized.z = this.accelerometer.filtered.z / 9.8;
     }

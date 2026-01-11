@@ -71,12 +71,14 @@ export class Chain extends SkeletonBase {
         // Create secondary constraints to increase rigidity
         const dx = this.points[i + 2].x - this.points[i].x;
         const dy = this.points[i + 2].y - this.points[i].y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const restLength = this.segmentLength * 2 * this.flexibility;
 
-        if (distance > restLength) {
+        const distance2 = dx * dx + dy * dy;
+        const restLength = this.segmentLength * 2 * this.flexibility;
+        const restLength2 = restLength * restLength;
+
+        if (distance2 > restLength2) {
           // Apply corrective force to make chain more rigid
-          const correction = (distance - restLength) / distance;
+          const correction = (distance2 - restLength2) / distance2;
           const cx = dx * correction * (1 - this.flexibility) * 0.1;
           const cy = dy * correction * (1 - this.flexibility) * 0.1;
 

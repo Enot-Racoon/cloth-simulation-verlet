@@ -1,11 +1,11 @@
-import { Settings } from '../types';
+import { Settings } from "../types";
 
 // ================================
 // Simulation parameters
 // ================================
 export const SETTINGS: Settings = {
   gravity: 0.5,
-  friction: 0.97,
+  friction: 0.9,
   constraintIterations: 8,
   pointSpacing: 20,
   showFloor: true,

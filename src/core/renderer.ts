@@ -1,6 +1,6 @@
-import { Point, Constraint, Face, Mouse, FPSMeter } from '../types';
-import { PhysicsEngine, clamp } from './physics';
-import { SETTINGS } from './settings';
+import { Point, Constraint, Face, Mouse, FPSMeter } from "../types";
+import { PhysicsEngine, clamp } from "./physics";
+import { SETTINGS } from "./settings";
 
 // ================================
 // Rendering system
@@ -52,7 +52,7 @@ export class Renderer {
   private async loadTexture(): Promise<void> {
     try {
       const response = await fetch(SETTINGS.textureImage);
-      if (!response.ok) throw new Error('Failed to load texture');
+      if (!response.ok) throw new Error("Failed to load texture");
 
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
@@ -64,7 +64,7 @@ export class Renderer {
 
       this.textureImage.src = objectUrl;
     } catch (error) {
-      console.warn('Texture loading failed, continuing without texture');
+      console.warn("Texture loading failed, continuing without texture");
     }
   }
 
@@ -92,8 +92,33 @@ export class Renderer {
   }
 
   private renderFloor(): void {
-    this.ctx.fillStyle = "#ddd";
-    this.ctx.fillRect(0, this.physics.getFloorY(), this.canvas.width, 2);
+    const segments = this.physics.getFloorSegments();
+
+    // Draw floor segments with terrain coloring
+    for (const seg of segments) {
+      const height = this.physics.getFloorYAt(seg.x1);
+      // const depth = height - this.canvas.height;
+
+      // Color based on depth (pits are darker)
+      const darkness = Math.min(255, 100 + (this.canvas.height - height) * 0.5);
+      this.ctx.fillStyle = `rgb(${darkness}, ${darkness}, ${darkness + 20})`;
+
+      this.ctx.beginPath();
+      this.ctx.moveTo(seg.x1, seg.y1);
+      this.ctx.lineTo(seg.x2, seg.y2);
+      this.ctx.lineTo(seg.x2, this.canvas.height);
+      this.ctx.lineTo(seg.x1, this.canvas.height);
+      this.ctx.closePath();
+      this.ctx.fill();
+
+      // Draw surface line
+      this.ctx.strokeStyle = "#888";
+      this.ctx.lineWidth = 2;
+      this.ctx.beginPath();
+      this.ctx.moveTo(seg.x1, seg.y1);
+      this.ctx.lineTo(seg.x2, seg.y2);
+      this.ctx.stroke();
+    }
   }
 
   private renderFaces(): void {
@@ -128,10 +153,14 @@ export class Renderer {
       // Calculate affine transformation
       const denom = (u1 - u3) * (v2 - v3) - (u2 - u3) * (v1 - v3);
       if (Math.abs(denom) > 0.0001) {
-        const m11 = ((p1.x - p3.x) * (v2 - v3) - (p2.x - p3.x) * (v1 - v3)) / denom;
-        const m12 = ((p1.y - p3.y) * (v2 - v3) - (p2.y - p3.y) * (v1 - v3)) / denom;
-        const m21 = ((u1 - u3) * (p2.x - p3.x) - (u2 - u3) * (p1.x - p3.x)) / denom;
-        const m22 = ((u1 - u3) * (p2.y - p3.y) - (u2 - u3) * (p1.y - p3.y)) / denom;
+        const m11 =
+          ((p1.x - p3.x) * (v2 - v3) - (p2.x - p3.x) * (v1 - v3)) / denom;
+        const m12 =
+          ((p1.y - p3.y) * (v2 - v3) - (p2.y - p3.y) * (v1 - v3)) / denom;
+        const m21 =
+          ((u1 - u3) * (p2.x - p3.x) - (u2 - u3) * (p1.x - p3.x)) / denom;
+        const m22 =
+          ((u1 - u3) * (p2.y - p3.y) - (u2 - u3) * (p1.y - p3.y)) / denom;
         const dx = p3.x - m11 * u3 - m21 * v3;
         const dy = p3.y - m12 * u3 - m22 * v3;
 
@@ -204,7 +233,13 @@ export class Renderer {
       if (mouse.initialPinned) {
         this.ctx.fillStyle = "#002ffb";
         this.ctx.beginPath();
-        this.ctx.arc(mouse.point.x, mouse.point.y, this.ctx.lineWidth, 0, Math.PI * 2);
+        this.ctx.arc(
+          mouse.point.x,
+          mouse.point.y,
+          this.ctx.lineWidth,
+          0,
+          Math.PI * 2
+        );
         this.ctx.fill();
       }
     }
