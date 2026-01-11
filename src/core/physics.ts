@@ -268,11 +268,13 @@ export class PhysicsEngine {
         // Compute distance and tear if too long
         const dx = p2.x - p1.x;
         const dy = p2.y - p1.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist === 0) continue;
+        const dist2 = dx * dx + dy * dy;
+        const restLength2 = c.restLength * c.restLength;
+        const tearLength2 = c.tearLength * c.tearLength;
+        if (dist2 === 0) continue;
 
         // Tear constraint
-        if (!!c.tearLength && dist > c.tearLength) {
+        if (!!c.tearLength && dist2 > tearLength2) {
           // Remove faces that use this constraint
           const tearFaces = this.faces.filter((f) =>
             [c.i1, c.i2].every((i) => [f.i1, f.i2, f.i3].includes(i))
@@ -288,20 +290,20 @@ export class PhysicsEngine {
           continue;
         }
 
-        if (!!c.tearLength && dist <= c.restLength) continue;
+        if (!!c.tearLength && dist2 <= restLength2) continue;
 
         // Compute correction based on pin state
         let stiffness;
-        if (dist > c.restLength) {
+        if (dist2 > restLength2) {
           // Strong correction for stretching
-          const stretch = dist / c.restLength;
+          const stretch = dist2 / restLength2;
           stiffness = Math.max(0.7, Math.min(1.1, 1.0 - (stretch - 1.0) * 0.3));
         } else {
           // Weak correction for compression
           stiffness = 0.1;
         }
 
-        const correction = (dist - c.restLength) / dist;
+        const correction = (dist2 - restLength2) / dist2;
         const cx = dx * correction * stiffness;
         const cy = dy * correction * stiffness;
 

@@ -190,13 +190,13 @@ export class InputManager {
       (z - this.accelerometer.filtered.z) * smoothing;
 
     // Normalize
-    const magnitude = Math.sqrt(
+    // optimize math sqrt
+    const magnitude2 =
       this.accelerometer.filtered.x * this.accelerometer.filtered.x +
-        this.accelerometer.filtered.y * this.accelerometer.filtered.y
-    );
+      this.accelerometer.filtered.y * this.accelerometer.filtered.y;
 
     const threshold = 1.0;
-    if (magnitude > threshold) {
+    if (magnitude2 > threshold * threshold) {
       this.accelerometer.normalized = normalizeVector(
         this.accelerometer.filtered
       );

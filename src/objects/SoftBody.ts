@@ -56,7 +56,7 @@ export class SoftBody extends SkeletonBase {
       this.addConstraint(i, nextIndex, restLength, 0);
     }
 
-    // Create constraints between outer circle points
+    // Create constraints between outerouter circle points
     // for (let i = 0; i < this.segments; i++) {
     //   const nextIndex = (i + 1) % this.segments;
     //   const p1 = this.points[i + this.segments];

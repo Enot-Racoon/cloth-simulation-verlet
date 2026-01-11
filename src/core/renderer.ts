@@ -189,9 +189,13 @@ export class Renderer {
       // Calculate distance and stress
       const dx = p2.x - p1.x;
       const dy = p2.y - p1.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
 
-      const t = clamp((dist - c.restLength) / (c.tearLength - c.restLength));
+      // optimize math sqrt
+      const dist2 = dx * dx + dy * dy;
+      const restLength2 = c.restLength * c.restLength;
+      const tearLength2 = c.tearLength * c.tearLength;
+
+      const t = clamp((dist2 - restLength2) / (tearLength2 - restLength2));
 
       if (t < (this.renderConstraints ? 0 : 0.3)) continue;
 
