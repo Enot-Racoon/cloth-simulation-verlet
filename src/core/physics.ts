@@ -46,73 +46,51 @@ export class PhysicsEngine {
 
     this.floorSegments = [];
 
-    // Generate floor with steps, slopes and pits
+    // Height bounds for the floor
+    const maxY = baseY - 50; // Highest point (lowest y value)
+    const minY = baseY - 250; // Lowest point (highest y value)
+
+    // Track current y position for continuous floor
+    let currentY = baseY - 150;
     let x = 0;
+
     while (x < canvasWidth) {
       const rand = Math.random();
-      const nextX = Math.min(
-        x + segmentWidth + Math.random() * 50,
-        canvasWidth
-      );
-      const width = nextX - x;
+      const segmentLength = segmentWidth + Math.random() * 100;
+      const nextX = Math.min(x + segmentLength, canvasWidth);
 
-      if (rand < 0.3) {
-        // Step up or down
-        const heightChange = (Math.random() - 0.5) * 80;
+      if (rand < 0.25) {
+        // Step up/down - change height gradually
+        const heightChange = (Math.random() - 0.5) * 60;
+        currentY = Math.max(maxY, Math.min(minY, currentY + heightChange));
         this.floorSegments.push({
           x1: x,
           x2: nextX,
-          y1:
-            baseY +
-            (this.floorSegments.length > 0
-              ? this.floorSegments[this.floorSegments.length - 1].y2
-              : 0) +
-            heightChange * 0.3,
-          y2:
-            baseY +
-            (this.floorSegments.length > 0
-              ? this.floorSegments[this.floorSegments.length - 1].y2
-              : 0) +
-            heightChange * 0.3,
+          y1: currentY,
+          y2: currentY,
         });
-      } else if (rand < 0.5) {
+      } else if (rand < 0.45) {
         // Sloped section (ramp)
-        const heightChange = (Math.random() - 0.5) * 100;
+        const heightChange = (Math.random() - 0.5) * 80;
+        const startY = currentY;
+        currentY = Math.max(maxY, Math.min(minY, currentY + heightChange));
         this.floorSegments.push({
           x1: x,
           x2: nextX,
-          y1:
-            baseY +
-            (this.floorSegments.length > 0
-              ? this.floorSegments[this.floorSegments.length - 1].y2
-              : 0),
-          y2:
-            baseY +
-            (this.floorSegments.length > 0
-              ? this.floorSegments[this.floorSegments.length - 1].y2
-              : 0) +
-            heightChange,
+          y1: startY,
+          y2: currentY,
         });
-      } else if (rand < 0.65) {
-        // Pit/hole
-        const pitDepth = 50 + Math.random() * 80;
-        const pitWidth = 50 + Math.random() * 80;
-        const pitX = x + Math.random() * (width - pitWidth);
+      } else if (rand < 0.6) {
+        // Pit/hole - creates a gap in the floor
+        const pitWidth = 60 + Math.random() * 100;
+        const pitX = x + Math.random() * (nextX - x - pitWidth);
 
-        // Left side of pit
+        // Left side of pit (continuous with previous)
         this.floorSegments.push({
           x1: x,
           x2: pitX,
-          y1:
-            baseY +
-            (this.floorSegments.length > 0
-              ? this.floorSegments[this.floorSegments.length - 1].y2
-              : 0),
-          y2:
-            baseY +
-            (this.floorSegments.length > 0
-              ? this.floorSegments[this.floorSegments.length - 1].y2
-              : 0),
+          y1: currentY,
+          y2: currentY,
         });
 
         // Right side of pit (after the gap)
@@ -121,11 +99,10 @@ export class PhysicsEngine {
           this.floorSegments.push({
             x1: rightX,
             x2: nextX,
-            y1: baseY + pitDepth,
-            y2: baseY + pitDepth,
+            y1: currentY,
+            y2: currentY,
           });
         }
-
         x = nextX;
         continue;
       } else {
@@ -133,29 +110,13 @@ export class PhysicsEngine {
         this.floorSegments.push({
           x1: x,
           x2: nextX,
-          y1:
-            baseY +
-            (this.floorSegments.length > 0
-              ? this.floorSegments[this.floorSegments.length - 1].y2
-              : 0),
-          y2:
-            baseY +
-            (this.floorSegments.length > 0
-              ? this.floorSegments[this.floorSegments.length - 1].y2
-              : 0),
+          y1: currentY,
+          y2: currentY,
         });
       }
 
       x = nextX;
     }
-
-    // Smooth out the floor to avoid extreme heights
-    const maxHeight = baseY - 350;
-    const minHeight = baseY - 100;
-    this.floorSegments.forEach((seg) => {
-      seg.y1 = Math.max(maxHeight, Math.min(minHeight, seg.y1 - 200));
-      seg.y2 = Math.max(maxHeight, Math.min(minHeight, seg.y2 - 200));
-    });
   }
 
   getFloorSegments(): FloorSegment[] {
