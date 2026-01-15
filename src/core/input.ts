@@ -5,11 +5,14 @@ import { SETTINGS } from "./settings";
 // ================================
 // Input handling
 // ================================
-export class InputManager {
+export class InputManager implements Disposable {
+  private pressedKeys = new Set<string>();
+  private releasedKeys = new Set<string>();
   private mouse: Mouse;
   private accelerometer: AccelerometerData;
   private physics: PhysicsEngine;
   private canvas: HTMLCanvasElement;
+  private toDispose: (() => void)[] = [];
 
   constructor(canvas: HTMLCanvasElement, physics: PhysicsEngine) {
     this.canvas = canvas;
@@ -29,6 +32,10 @@ export class InputManager {
     };
 
     this.setupEventListeners();
+  }
+
+  [Symbol.dispose](): void {
+    this.toDispose.forEach((dispose) => dispose());
   }
 
   getMouse(): Mouse {
@@ -62,9 +69,41 @@ export class InputManager {
     }
   }
 
+  isPressed(key: string): boolean {
+    return this.pressedKeys.has(key);
+  }
+
+  isReleased(key: string): boolean {
+    const isReleased = this.releasedKeys.has(key);
+    this.releasedKeys.delete(key);
+    return isReleased;
+  }
+
+  private addWindowEventListener<K extends keyof WindowEventMap>(
+    type: K,
+    listener: (this: Window, ev: WindowEventMap[K]) => any,
+    options?: boolean | AddEventListenerOptions
+  ): void {
+    window.addEventListener(type, listener, options);
+    this.toDispose.push(() =>
+      window.removeEventListener(type, listener, options)
+    );
+  }
+
+  private addCanvasEventListener<K extends keyof HTMLElementEventMap>(
+    type: K,
+    listener: (this: HTMLCanvasElement, ev: HTMLElementEventMap[K]) => any,
+    options?: boolean | AddEventListenerOptions
+  ): void {
+    this.canvas.addEventListener(type, listener, options);
+    this.toDispose.push(() =>
+      this.canvas.removeEventListener(type, listener, options)
+    );
+  }
+
   private setupEventListeners(): void {
     // Touch events
-    this.canvas.addEventListener("touchstart", (e: TouchEvent) => {
+    this.addCanvasEventListener("touchstart", (e: TouchEvent) => {
       const rect = this.canvas.getBoundingClientRect();
       this.mouse.x = e.touches[0].clientX - rect.left;
       this.mouse.y = e.touches[0].clientY - rect.top;
@@ -82,7 +121,7 @@ export class InputManager {
       }
     });
 
-    this.canvas.addEventListener("touchmove", (e: TouchEvent) => {
+    this.addCanvasEventListener("touchmove", (e: TouchEvent) => {
       const rect = this.canvas.getBoundingClientRect();
       const smoothing = 0.2;
       const x = e.touches[0].clientX - rect.left;
@@ -99,7 +138,7 @@ export class InputManager {
       }
     });
 
-    this.canvas.addEventListener("touchend", () => {
+    this.addCanvasEventListener("touchend", () => {
       this.mouse.down = false;
 
       if (this.mouse.point) {
@@ -109,7 +148,7 @@ export class InputManager {
     });
 
     // Mouse events
-    this.canvas.addEventListener("mousedown", (e: MouseEvent) => {
+    this.addCanvasEventListener("mousedown", (e: MouseEvent) => {
       const rect = this.canvas.getBoundingClientRect();
       this.mouse.x = e.clientX - rect.left;
       this.mouse.y = e.clientY - rect.top;
@@ -127,7 +166,7 @@ export class InputManager {
       }
     });
 
-    this.canvas.addEventListener("mousemove", (e: MouseEvent) => {
+    this.addCanvasEventListener("mousemove", (e: MouseEvent) => {
       const rect = this.canvas.getBoundingClientRect();
       const smoothing = 0.2;
       const x = e.clientX - rect.left;
@@ -144,7 +183,7 @@ export class InputManager {
       }
     });
 
-    this.canvas.addEventListener("mouseup", () => {
+    this.addCanvasEventListener("mouseup", () => {
       this.mouse.down = false;
 
       if (this.mouse.point) {
@@ -153,7 +192,10 @@ export class InputManager {
       }
     });
 
-    window.addEventListener("keydown", (e: KeyboardEvent) => {
+    // Keyboard events
+    this.addWindowEventListener("keydown", (e: KeyboardEvent) => {
+      this.pressedKeys.add(e.key);
+
       if (e.key === " " && this.mouse.point) {
         e.preventDefault();
 
@@ -165,8 +207,13 @@ export class InputManager {
       }
     });
 
+    this.addWindowEventListener("keyup", (e: KeyboardEvent) => {
+      this.pressedKeys.delete(e.key);
+      this.releasedKeys.add(e.key);
+    });
+
     // Accelerometer
-    window.addEventListener("devicemotion", this.handleMotion.bind(this));
+    this.addWindowEventListener("devicemotion", this.handleMotion.bind(this));
   }
 
   private handleMotion(event: DeviceMotionEvent): void {

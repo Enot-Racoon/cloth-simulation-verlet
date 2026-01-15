@@ -243,9 +243,9 @@ export class PhysicsEngine {
     for (const p of this.points) {
       if (p.pinned) continue;
 
-      // Apply friction (Verlet integration)
-      const vx = (p.x - p.prevX) * SETTINGS.friction;
-      const vy = (p.y - p.prevY) * SETTINGS.friction;
+      // Apply base friction (Verlet integration)
+      const vx = (p.x - p.prevX) * (1 - SETTINGS.friction / 64);
+      const vy = (p.y - p.prevY) * (1 - SETTINGS.friction / 64);
 
       p.prevX = p.x;
       p.prevY = p.y;
@@ -332,6 +332,8 @@ export class PhysicsEngine {
       if (p.y >= floorY) {
         p.y = floorY;
         p.prevY = floorY;
+
+        p.x += -SETTINGS.friction * (p.x - p.prevX);
       }
     });
   }
