@@ -74,15 +74,6 @@ export class SoftBody extends SkeletonBase {
       this.addPoint(x, y);
     }
 
-    // Create points in a outer circle
-    // for (let i = 0; i < this.segments; i++) {
-    //   const angle = (i / this.segments) * Math.PI * 2;
-    //   const r = this.radius * 2;
-    //   const x = this.centerX + Math.cos(angle) * r;
-    //   const y = this.centerY + Math.sin(angle) * r;
-    //   this.addPoint(x, y);
-    // }
-
     // Create constraints between inner circle points
     for (let i = 0; i < this.segments; i++) {
       const nextIndex = (i + 1) % this.segments;
@@ -94,47 +85,6 @@ export class SoftBody extends SkeletonBase {
 
       this.addConstraint(i, nextIndex, restLength, 0);
     }
-
-    // Create constraints between outerouter circle points
-    // for (let i = 0; i < this.segments; i++) {
-    //   const nextIndex = (i + 1) % this.segments;
-    //   const p1 = this.points[i + this.segments];
-    //   const p2 = this.points[nextIndex + this.segments];
-    //   const restLength = Math.sqrt(
-    //     Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2)
-    //   );
-
-    //   this.addConstraint(
-    //     i + this.segments,
-    //     nextIndex + this.segments,
-    //     restLength,
-    //     0
-    //   );
-    // }
-
-    // Create constraints between inner and outer circle points
-    // for (let i = 0; i < this.segments; i++) {
-    //   const p1 = this.points[i];
-    //   const p2 = this.points[i + this.segments];
-    //   const restLength = Math.sqrt(
-    //     Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2)
-    //   );
-
-    //   this.addConstraint(i, i + this.segments, restLength, 0);
-
-    //   this.addConstraint(
-    //     i,
-    //     ((i + 1) % this.segments) + this.segments,
-    //     restLength,
-    //     0
-    //   );
-    //   this.addConstraint(
-    //     i,
-    //     ((i + this.segments - 1) % this.segments) + this.segments,
-    //     restLength,
-    //     0
-    //   );
-    // }
 
     // Add internal structure for stability
     const centerIndex = this.points.length; // Index of the center point
@@ -163,8 +113,8 @@ export class SoftBody extends SkeletonBase {
     }
 
     ctx.closePath();
-    ctx.strokeStyle = "rgba(100, 150, 255, 0.8)";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "hsla(221, 100%, 70%, 0.80)";
     ctx.stroke();
 
     // Draw internal structure

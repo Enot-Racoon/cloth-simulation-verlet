@@ -117,10 +117,10 @@ export class Renderer {
 
       // Color based on depth (pits are darker)
       const darkness = Math.min(
-        255,
-        100 + (this.viewport.canvas.height - height) * 0.5,
+        200,
+        32 + (this.viewport.canvas.height - height) * 0.5,
       );
-      this.ctx.fillStyle = `rgb(${darkness}, ${darkness}, ${darkness + 20})`;
+      this.ctx.fillStyle = `rgb(${darkness}, ${darkness}, ${darkness + 10})`;
 
       this.ctx.beginPath();
       this.ctx.moveTo(seg.x1, seg.y1);
@@ -131,8 +131,9 @@ export class Renderer {
       this.ctx.fill();
 
       // Draw Viewport line
+      // this.ctx.lineJoin = "round";
       this.ctx.strokeStyle = "#888";
-      this.ctx.lineWidth = 2;
+      this.ctx.lineWidth = 4;
       this.ctx.beginPath();
       this.ctx.moveTo(seg.x1, seg.y1);
       this.ctx.lineTo(seg.x2, seg.y2);

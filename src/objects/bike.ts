@@ -32,15 +32,17 @@ export default class Bike
   }
 
   render(ctx: CanvasRenderingContext2D): void {
+    ctx.lineWidth = 8;
     this.wheelA.render(ctx);
+    ctx.lineWidth = 8;
     this.wheelB.render(ctx);
 
     ctx.beginPath();
     ctx.moveTo(this.wheelA.center.x, this.wheelA.center.y);
     ctx.lineTo(this.wheelB.center.x, this.wheelB.center.y);
     ctx.closePath();
-    ctx.strokeStyle = "rgba(100, 150, 255, 0.8)";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = "hsla(221, 70%, 30%, 0.80)";
+    ctx.lineWidth = 4;
     ctx.stroke();
   }
 

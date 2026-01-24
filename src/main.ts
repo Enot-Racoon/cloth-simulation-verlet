@@ -56,7 +56,7 @@ class App {
     const bike = new Bike(
       this.context,
       window.innerWidth / 2,
-      (window.innerHeight / 5) * 3.3,
+      (window.innerHeight / 5) * 3.5,
     );
     // bike.wheelA = withKeyboardControl(
     //   this.context.input,

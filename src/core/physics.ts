@@ -1,4 +1,5 @@
 import { Point, Constraint, Face, Vector2D, Vector3D } from "../types";
+import { clamp, rand } from "../utils";
 import { SETTINGS } from "./settings";
 
 // ================================
@@ -40,26 +41,27 @@ export class PhysicsEngine {
     if (!SETTINGS.showFloor) return;
 
     const canvasWidth = window.innerWidth;
-    const baseY =
-      window.innerHeight - (window.innerHeight * SETTINGS.floorOffset) / 100;
-    const segmentWidth = 100;
+    const baseY = window.innerHeight;
+    const s = 25;
+    const segmentMinWidth = s;
 
     this.floorSegments = [];
 
     // Height bounds for the floor
-    const maxY = baseY - 50; // Highest point (lowest y value)
-    const minY = baseY - 250; // Lowest point (highest y value)
+    const maxY = baseY - s * 1; // Highest point (lowest y value)
+    const minY = baseY - s * 8; // Lowest point (highest y value)
 
     // Track current y position for continuous floor
-    let currentY = baseY - 150;
-    let x = 0;
+    let currentY = rand(minY, maxY);
 
+    let x = 0;
     while (x < canvasWidth) {
-      const rand = Math.random();
-      const segmentLength = segmentWidth + Math.random() * 100;
+      const chance = Math.random();
+      const segmentLength = rand(segmentMinWidth, segmentMinWidth * 2);
       const nextX = Math.min(x + segmentLength, canvasWidth);
 
-      if (rand < 0.25) {
+      // off
+      if (chance < -0.25) {
         // Step up/down - change height gradually
         const heightChange = (Math.random() - 0.5) * 60;
         currentY = Math.max(maxY, Math.min(minY, currentY + heightChange));
@@ -69,18 +71,19 @@ export class PhysicsEngine {
           y1: currentY,
           y2: currentY,
         });
-      } else if (rand < 0.45) {
+      } else if (chance < 0.45) {
         // Sloped section (ramp)
         const heightChange = (Math.random() - 0.5) * 80;
         const startY = currentY;
-        currentY = Math.max(maxY, Math.min(minY, currentY + heightChange));
+        currentY = clamp(currentY + heightChange, minY, maxY);
         this.floorSegments.push({
           x1: x,
           x2: nextX,
           y1: startY,
           y2: currentY,
         });
-      } else if (rand < 0.6) {
+        // off
+      } else if (chance < -0.6) {
         // Pit/hole - creates a gap in the floor
         const pitWidth = 60 + Math.random() * 100;
         const pitX = x + Math.random() * (nextX - x - pitWidth);
@@ -131,9 +134,7 @@ export class PhysicsEngine {
         return seg.y1 + (seg.y2 - seg.y1) * t;
       }
     }
-    const baseY =
-      window.innerHeight - (window.innerHeight * SETTINGS.floorOffset) / 100;
-    return baseY;
+    return window.innerHeight;
   }
 
   // Point management

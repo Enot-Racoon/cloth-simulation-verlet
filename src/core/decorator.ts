@@ -37,23 +37,23 @@ export const withKeyboardControl =
 
           if (rotateSpeed > maxRotateSpeed) rotateSpeed = maxRotateSpeed;
         }
-      } else {
-        if (rotateSpeed > 0) {
-          rotateSpeed -= rotateDeacceleration * dt;
-          if (rotateSpeed < 0) rotateSpeed = 0;
-        }
-        if (rotateSpeed < 0) {
-          rotateSpeed += rotateDeacceleration * dt;
-          if (rotateSpeed > 0) rotateSpeed = 0;
-        }
+      }
+
+      if (!rotateDec && rotateSpeed > 0) {
+        rotateSpeed -= rotateDeacceleration * dt;
+        if (rotateSpeed < 0) rotateSpeed = 0;
+      }
+      if (!rotateInc && rotateSpeed < 0) {
+        rotateSpeed += rotateDeacceleration * dt;
+        if (rotateSpeed > 0) rotateSpeed = 0;
       }
 
       if (rotateSpeed !== 0) node.rotate(rotateSpeed);
 
-      debug.setDebugData(
-        "rotateSpeed",
-        rotateSpeed.toFixed(4).padStart(7, " ")
-      );
+      // debug.setDebugData(
+      //   "rotateSpeed",
+      //   rotateSpeed.toFixed(4).padStart(7, " "),
+      // );
 
       baseUpdate(dt);
     };
