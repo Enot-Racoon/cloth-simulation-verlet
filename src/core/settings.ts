@@ -5,7 +5,7 @@ import { Settings } from "../types";
 // ================================
 export const SETTINGS: Settings = {
   gravity: 0.5,
-  friction: 0.9,
+  friction: 0.5,
   constraintIterations: 8,
   pointSpacing: 20,
   showFloor: true,

@@ -1,63 +1,36 @@
-import { PhysicsEngine } from "./core/physics";
-import { InputManager } from "./core/input";
-import { Renderer } from "./core/renderer";
-import { ObjectInitializer } from "./core/initializers";
-import { DebugManager } from "./core/debug";
 import { SETTINGS } from "./core/settings";
-import { SimulationManager } from "./core/SimulationManager";
-import { SoftBody, Chain } from "./objects";
+import { SoftBody } from "./objects";
+import { withKeyboardControl } from "./core/decorator";
+import RuntimeContext from "./core/context";
+import type { Settings } from "./types";
+import Bike from "./objects/bike";
 
-// ================================
-// Main Application Class
-// ================================
-class ClothSimulationApp {
-  private canvas: HTMLCanvasElement;
-  private physics: PhysicsEngine;
-  private input: InputManager;
-  private renderer: Renderer;
-  private initializer: ObjectInitializer;
-  private debug: DebugManager;
-  private simulationManager: SimulationManager;
+class App {
+  private lastTime = 0;
+  private running = false;
+  private context: RuntimeContext;
   private animationId: number | null = null;
 
-  constructor() {
-    // Initialize canvas
-    this.canvas = document.getElementById("canvas") as HTMLCanvasElement;
+  constructor(settings: Settings) {
+    const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 
-    // Initialize systems
-    this.physics = new PhysicsEngine();
-    this.input = new InputManager(this.canvas, this.physics);
-    this.renderer = new Renderer(this.canvas, this.physics);
-    this.initializer = new ObjectInitializer(this.physics);
-    this.debug = new DebugManager();
-    this.simulationManager = new SimulationManager(this.physics);
+    this.context = new RuntimeContext(canvas, settings);
 
-    // Setup canvas resizing
-    this.setupCanvas();
-
-    // Initialize simulation objects
+    this.setupScene();
     this.initializeObjects();
 
-    // Start the main loop
     this.start();
   }
 
-  private setupCanvas(): void {
-    const resizeCanvas = () => {
-      this.canvas.width = window.innerWidth;
-      this.canvas.height = window.innerHeight;
-      SETTINGS.pointSpacing =
-        Math.min(this.canvas.width, this.canvas.height) / 40;
-      this.physics.generateFloor();
-    };
-
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
+  private setupScene(): void {
+    this.context.settings.pointSpacing =
+      Math.min(this.context.viewport.width, this.context.viewport.height) / 40;
+    this.context.physics.generateFloor();
   }
 
   private initializeObjects(): void {
-    const m = 1;
-    // this.initializer.initCloth({
+    // const m = 1;
+    // this.context.initializer.initCloth({
     //   startX: 4 * SETTINGS.pointSpacing,
     //   startY: 2 * SETTINGS.pointSpacing,
     //   columns: Math.ceil(17 / m),
@@ -70,13 +43,44 @@ class ClothSimulationApp {
     // });
 
     // Add a soft body object
-    const softBody = new SoftBody(
+    // const wheelA = new SoftBody(
+    //   window.innerWidth / 3,
+    //   (window.innerHeight / 5) * 3.3,
+    //   50,
+    //   13,
+    // );
+    // this.context.simulation.addObject(
+    //   withKeyboardControl(this.context.input, this.context.debug)(wheelA),
+    // );
+
+    const bike = new Bike(
+      this.context,
       window.innerWidth / 2,
       (window.innerHeight / 5) * 3.3,
-      50,
-      13
     );
-    this.simulationManager.addObject(softBody);
+    // bike.wheelA = withKeyboardControl(
+    //   this.context.input,
+    //   this.context.debug,
+    // )(bike.wheelA);
+    bike.wheelB = withKeyboardControl(
+      this.context.input,
+      this.context.debug,
+    )(bike.wheelB);
+    this.context.simulation.addObject(bike);
+
+    // const wheelB = new SoftBody(
+    //   window.innerWidth / 2 + 100,
+    //   (window.innerHeight / 5) * 3.3,
+    //   40,
+    //   13,
+    // );
+    // this.context.simulation.addObject(wheelB);
+    // this.context.physics.createConstraint(
+    //   wheelA.startIndex + wheelA.pointCount - 1,
+    //   wheelB.startIndex + wheelB.pointCount - 1,
+    //   100,
+    //   0,
+    // );
 
     // Add a chain object
     // const chain = new Chain(
@@ -89,59 +93,71 @@ class ClothSimulationApp {
     // this.simulationManager.addObject(chain);
   }
 
-  private update = (): void => {
+  private update = (dt: number): void => {
     // Apply forces
-    const gravity = this.input.getGravity();
-    this.physics.applyForces(gravity);
+    const gravity = this.context.input.getGravity();
+    this.context.physics.applyForces(gravity); // todo: add dt
 
     // Handle mouse interaction
-    this.input.applyMouseInteraction();
+    this.context.input.applyMouseInteraction();
 
     // Update physics
-    this.physics.update();
+    this.context.physics.update(); // todo: add dt
 
     // Update simulation objects
-    this.simulationManager.update(1 / 60); // Assuming ~60fps
+    this.context.simulation.update(dt);
 
     // Apply boundary conditions
-    this.physics.applyBoundaryConditions();
+    this.context.physics.applyBoundaryConditions();
 
     // Update debug info
-    this.debug.updateDebugData(
-      this.physics.getPoints().length,
-      this.physics.getConstraints().length,
-      this.physics.getFaces().length
-    );
+    // this.context.debug.updateDebugData(
+    //   this.context.physics.getPoints().length,
+    //   this.context.physics.getConstraints().length,
+    //   this.context.physics.getFaces().length,
+    // );
   };
 
   private render = (): void => {
     // Clear and render scene
-    this.renderer.render();
+    this.context.renderer.render();
 
     // Render simulation objects
-    const ctx = this.renderer.getContext(); // We need to add this method to Renderer
+    const ctx = this.context.renderer.getContext();
     if (ctx) {
-      this.simulationManager.render(ctx);
+      this.context.simulation.render(ctx);
     }
 
     // Render mouse interaction
-    this.renderer.renderMouse(this.input.getMouse());
+    this.context.renderer.renderMouse(this.context.input.getMouse());
 
-    // Update renderer FPS
-    this.renderer.update();
+    this.context.renderer.update();
   };
 
-  private loop = (): void => {
-    this.update();
+  private loop = (time: number): void => {
+    if (!this.running) return;
+
+    const dt = (time - this.lastTime) / 1000;
+    this.lastTime = time;
+
+    this.update(dt);
     this.render();
+
     this.animationId = requestAnimationFrame(this.loop);
   };
 
-  private start(): void {
+  start(): void {
+    if (this.running) return;
+
+    this.running = true;
+    this.lastTime = performance.now();
     this.animationId = requestAnimationFrame(this.loop);
   }
 
-  public destroy(): void {
+  stop(): void {
+    if (!this.running) return;
+
+    this.running = false;
     if (this.animationId !== null) {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
@@ -152,15 +168,15 @@ class ClothSimulationApp {
 // ================================
 // Entry point
 // ================================
-let app: ClothSimulationApp | null = null;
+function init(): void {
+  app = new App(SETTINGS);
+}
+
+let app: App | null = null;
 
 // Initialize when DOM is ready
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
 } else {
   init();
-}
-
-function init(): void {
-  app = new ClothSimulationApp();
 }

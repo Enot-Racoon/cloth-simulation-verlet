@@ -178,7 +178,7 @@ export class PhysicsEngine {
     i1: number,
     i2: number,
     restLength: number,
-    tearMultiplier: number
+    tearMultiplier: number,
   ): Constraint {
     const constraint: Constraint = {
       i1,
@@ -209,7 +209,7 @@ export class PhysicsEngine {
     i3: number,
     uv1: { u: number; v: number },
     uv2: { u: number; v: number },
-    uv3: { u: number; v: number }
+    uv3: { u: number; v: number },
   ): Face {
     const face: Face = { i1, i2, i3, uv1, uv2, uv3 };
     this.faces.push(face);
@@ -277,7 +277,7 @@ export class PhysicsEngine {
         if (!!c.tearLength && dist2 > tearLength2) {
           // Remove faces that use this constraint
           const tearFaces = this.faces.filter((f) =>
-            [c.i1, c.i2].every((i) => [f.i1, f.i2, f.i3].includes(i))
+            [c.i1, c.i2].every((i) => [f.i1, f.i2, f.i3].includes(i)),
           );
           tearFaces.forEach((face) => {
             const index = this.faces.indexOf(face);
@@ -352,8 +352,3 @@ export function normalizeVector(v: Vector3D): Vector3D {
   if (length === 0) return { x: 0, y: 0, z: 0 };
   return { x: v.x / length, y: v.y / length, z: v.z / length };
 }
-
-export const clamp = (v: number, min = 0, max = 1): number =>
-  Math.max(min, Math.min(max, v));
-
-export const range = (n: number): number[] => [...Array(n).keys()];

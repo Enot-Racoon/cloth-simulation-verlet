@@ -1,6 +1,7 @@
-import { RopeOptions, ClothOptions } from '../types';
-import { PhysicsEngine, range } from './physics';
-import { MATERIALS } from './settings';
+import { RopeOptions, ClothOptions } from "../types";
+import { PhysicsEngine } from "./physics";
+import { MATERIALS } from "./settings";
+import { range } from "../utils";
 
 // ================================
 // Object initializers
@@ -41,7 +42,7 @@ export class ObjectInitializer {
         baseIndex + i + 1,
         segmentLength,
         MATERIALS.rope.tearMultiplier,
-      )
+      ),
     );
   }
 
@@ -67,7 +68,8 @@ export class ObjectInitializer {
         if (pinTop && i === 0) pinned = true;
         if (pinTopLeft && i === 0 && j === 0) pinned = true;
         if (pinTopRight && i === 0 && j === columns - 1) pinned = true;
-        if (pinTopCenter && i === 0 && j === Math.floor(columns / 2)) pinned = true;
+        if (pinTopCenter && i === 0 && j === Math.floor(columns / 2))
+          pinned = true;
 
         return this.physics.createPoint(
           startX + j * segmentLength,

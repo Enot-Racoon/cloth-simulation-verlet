@@ -1,4 +1,4 @@
-import { Point, Constraint, Face, UV } from "../types";
+import type { Point, Constraint, Face, UV } from "../types";
 import { SkeletonBase } from "../core/SkeletonObject";
 
 // ================================
@@ -16,7 +16,7 @@ export class SoftBody extends SkeletonBase {
     centerX: number,
     centerY: number,
     radius: number,
-    segments: number
+    segments: number,
   ) {
     super();
     this.centerX = centerX;
@@ -24,6 +24,45 @@ export class SoftBody extends SkeletonBase {
     this.radius = radius;
     this.segments = segments;
     this.createCircularBody();
+  }
+
+  rotate(angle: number): void {
+    const centerIndex = this.points.length - 1;
+    const center = this.points[centerIndex];
+
+    for (let i = 0; i < this.points.length - 1; i++) {
+      const point = this.points[i];
+      const dx = point.x - center.x;
+      const dy = point.y - center.y;
+      const radius = Math.sqrt(dx * dx + dy * dy);
+      const newAngle = Math.atan2(dy, dx) + angle;
+      point.x = center.x + Math.cos(newAngle) * radius;
+      point.y = center.y + Math.sin(newAngle) * radius;
+    }
+  }
+
+  get center(): Point {
+    const centerIndex = this.points.length - 1;
+    return this.points[centerIndex];
+  }
+
+  get x(): number {
+    return this.center.x;
+  }
+
+  get y(): number {
+    const centerIndex = this.points.length - 1;
+    return this.points[centerIndex].y;
+  }
+
+  set x(value: number) {
+    const centerIndex = this.points.length - 1;
+    this.points[centerIndex].x = value;
+  }
+
+  set y(value: number) {
+    const centerIndex = this.points.length - 1;
+    this.points[centerIndex].y = value;
   }
 
   private createCircularBody(): void {
@@ -50,7 +89,7 @@ export class SoftBody extends SkeletonBase {
       const p1 = this.points[i];
       const p2 = this.points[nextIndex];
       const restLength = Math.sqrt(
-        Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2)
+        Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2),
       );
 
       this.addConstraint(i, nextIndex, restLength, 0);
@@ -105,7 +144,7 @@ export class SoftBody extends SkeletonBase {
       // Connect each point to the center
       const p = this.points[i];
       const restLength = Math.sqrt(
-        Math.pow(p.x - this.centerX, 2) + Math.pow(p.y - this.centerY, 2)
+        Math.pow(p.x - this.centerX, 2) + Math.pow(p.y - this.centerY, 2),
       );
 
       this.addConstraint(i, centerIndex, restLength, 0);
@@ -138,6 +177,11 @@ export class SoftBody extends SkeletonBase {
     ctx.strokeStyle = "rgba(100, 150, 255, 0.4)";
     ctx.lineWidth = 1;
     ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = "darkblue";
+    ctx.fill();
   }
 
   update(deltaTime: number): void {

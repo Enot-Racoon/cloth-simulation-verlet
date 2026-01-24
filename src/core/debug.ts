@@ -1,4 +1,4 @@
-import { DebugData } from '../types';
+import { DebugData } from "../types";
 
 // ================================
 // Debug system
@@ -10,7 +10,7 @@ export class DebugManager {
     const debugElement = document.getElementById("debug") as HTMLElement;
 
     this.debug = {
-      showDebug: false,
+      showDebug: true,
       debugData: {},
       element: debugElement,
       setDebugText: (data: any) => {
@@ -35,7 +35,11 @@ export class DebugManager {
     return this.debug;
   }
 
-  updateDebugData(pointsCount: number, constraintsCount: number, facesCount: number): void {
+  updateDebugData(
+    pointsCount: number,
+    constraintsCount: number,
+    facesCount: number
+  ): void {
     this.debug.setDebugData("points", pointsCount);
     this.debug.setDebugData("constraints", constraintsCount);
     this.debug.setDebugData("faces", facesCount);

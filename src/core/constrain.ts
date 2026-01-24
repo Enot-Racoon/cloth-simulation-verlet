@@ -2,31 +2,35 @@ import type { Constraint, ConstraintBehavior } from "../types";
 
 export const RopeBehavior: ConstraintBehavior = {
   compliance: 0,
-  breakStress: 0.3
-}
+  breakStress: 0.3,
+};
 
 export const RubberBehavior: ConstraintBehavior = {
   compliance: 0.01,
-  damping: 0.2
-}
+  damping: 0.2,
+};
 
 export const ClothBehavior: ConstraintBehavior = {
   compliance: 0.002,
-  damping: 0.1
-}
+  damping: 0.1,
+};
 
 abstract class BaseConstraint implements Constraint {
-  protected enabled = true
+  protected enabled = true;
   i1: number;
   i2: number;
+  restLength: number;
+  tearLength: number;
 
   isEnabled(): boolean {
     return this.enabled;
   }
 
-  constructor(i1: number, i2: number) {
+  constructor(i1: number, i2: number, restLength: number, tearLength: number) {
     this.i1 = i1;
     this.i2 = i2;
+    this.restLength = restLength;
+    this.tearLength = tearLength;
   }
 
   enable(): void {
@@ -37,10 +41,10 @@ abstract class BaseConstraint implements Constraint {
     this.enabled = false;
   }
 
-  abstract solve(dt: number): void
+  abstract solve(dt: number): void;
 
-  getStress?(): number
-  onBreak?(): void
+  getStress?(): number;
+  onBreak?(): void;
 }
 
 /*
@@ -226,7 +230,7 @@ export class ConstraintGroup extends BaseConstraint {
   private constraints: BaseConstraint[] = [];
 
   constructor(constraints: BaseConstraint[] = []) {
-    super(-1, -1);
+    super(-1, -1, 0, 0);
     this.constraints = constraints;
   }
 
@@ -361,4 +365,4 @@ export class VelocityConstraint extends BaseConstraint {
     // Implementation of velocity constraint solving
     // ...
   }
-} 
+}

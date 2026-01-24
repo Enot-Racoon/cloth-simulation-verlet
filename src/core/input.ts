@@ -82,73 +82,29 @@ export class InputManager implements Disposable {
   private addWindowEventListener<K extends keyof WindowEventMap>(
     type: K,
     listener: (this: Window, ev: WindowEventMap[K]) => any,
-    options?: boolean | AddEventListenerOptions
+    options?: boolean | AddEventListenerOptions,
   ): void {
     window.addEventListener(type, listener, options);
     this.toDispose.push(() =>
-      window.removeEventListener(type, listener, options)
+      window.removeEventListener(type, listener, options),
     );
   }
 
   private addCanvasEventListener<K extends keyof HTMLElementEventMap>(
     type: K,
     listener: (this: HTMLCanvasElement, ev: HTMLElementEventMap[K]) => any,
-    options?: boolean | AddEventListenerOptions
+    options?: boolean | AddEventListenerOptions,
   ): void {
     this.canvas.addEventListener(type, listener, options);
     this.toDispose.push(() =>
-      this.canvas.removeEventListener(type, listener, options)
+      this.canvas.removeEventListener(type, listener, options),
     );
   }
 
   private setupEventListeners(): void {
-    // Touch events
-    this.addCanvasEventListener("touchstart", (e: TouchEvent) => {
-      const rect = this.canvas.getBoundingClientRect();
-      this.mouse.x = e.touches[0].clientX - rect.left;
-      this.mouse.y = e.touches[0].clientY - rect.top;
-      this.mouse.down = true;
+    this.addCanvasEventListener("pointerdown", (e: PointerEvent) => {
+      e.preventDefault();
 
-      this.mouse.point = this.physics.findNearestPoint(
-        this.mouse.x,
-        this.mouse.y,
-        this.mouse.radius
-      );
-
-      if (this.mouse.point) {
-        this.mouse.initialPinned = this.mouse.point.pinned;
-        this.mouse.point.pinned = true;
-      }
-    });
-
-    this.addCanvasEventListener("touchmove", (e: TouchEvent) => {
-      const rect = this.canvas.getBoundingClientRect();
-      const smoothing = 0.2;
-      const x = e.touches[0].clientX - rect.left;
-      const y = e.touches[0].clientY - rect.top;
-      this.mouse.x += (x - this.mouse.x) * smoothing;
-      this.mouse.y += (y - this.mouse.y) * smoothing;
-
-      if (!this.mouse.down) {
-        this.mouse.point = this.physics.findNearestPoint(
-          x,
-          y,
-          this.mouse.radius
-        );
-      }
-    });
-
-    this.addCanvasEventListener("touchend", () => {
-      this.mouse.down = false;
-
-      if (this.mouse.point) {
-        this.mouse.point.pinned = this.mouse.initialPinned;
-        this.mouse.point = null;
-      }
-    });
-
-    // Mouse events
-    this.addCanvasEventListener("mousedown", (e: MouseEvent) => {
       const rect = this.canvas.getBoundingClientRect();
       this.mouse.x = e.clientX - rect.left;
       this.mouse.y = e.clientY - rect.top;
@@ -157,7 +113,7 @@ export class InputManager implements Disposable {
       this.mouse.point = this.physics.findNearestPoint(
         this.mouse.x,
         this.mouse.y,
-        this.mouse.radius
+        this.mouse.radius,
       );
 
       if (this.mouse.point) {
@@ -166,7 +122,20 @@ export class InputManager implements Disposable {
       }
     });
 
-    this.addCanvasEventListener("mousemove", (e: MouseEvent) => {
+    this.addCanvasEventListener("pointerup", (e: PointerEvent) => {
+      e.preventDefault();
+
+      this.mouse.down = false;
+
+      if (this.mouse.point) {
+        this.mouse.point.pinned = this.mouse.initialPinned;
+        this.mouse.point = null;
+      }
+    });
+
+    this.addCanvasEventListener("pointermove", (e: PointerEvent) => {
+      e.preventDefault();
+
       const rect = this.canvas.getBoundingClientRect();
       const smoothing = 0.2;
       const x = e.clientX - rect.left;
@@ -178,27 +147,22 @@ export class InputManager implements Disposable {
         this.mouse.point = this.physics.findNearestPoint(
           x,
           y,
-          this.mouse.radius
+          this.mouse.radius,
         );
       }
     });
 
-    this.addCanvasEventListener("mouseup", () => {
-      this.mouse.down = false;
-
-      if (this.mouse.point) {
-        this.mouse.point.pinned = this.mouse.initialPinned;
-        this.mouse.point = null;
-      }
-    });
-
-    // Keyboard events
     this.addWindowEventListener("keydown", (e: KeyboardEvent) => {
+      e.preventDefault();
+
       this.pressedKeys.add(e.key);
+      this.releasedKeys.delete(e.key);
+
+      if (e.key === "r") {
+        location.reload();
+      }
 
       if (e.key === " " && this.mouse.point) {
-        e.preventDefault();
-
         if (this.mouse.down) {
           this.mouse.initialPinned = !this.mouse.initialPinned;
         } else {
@@ -245,7 +209,7 @@ export class InputManager implements Disposable {
     const threshold = 1.0;
     if (magnitude2 > threshold * threshold) {
       this.accelerometer.normalized = normalizeVector(
-        this.accelerometer.filtered
+        this.accelerometer.filtered,
       );
     } else {
       this.accelerometer.normalized.z = this.accelerometer.filtered.z / 9.8;

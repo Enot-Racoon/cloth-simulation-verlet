@@ -1,25 +1,36 @@
-import { Point, Constraint, Face, Mouse, FPSMeter } from "../types";
-import { PhysicsEngine, clamp } from "./physics";
-import { SETTINGS } from "./settings";
+import type {
+  Point,
+  Constraint,
+  Face,
+  Mouse,
+  FPSMeter,
+  Settings,
+} from "../types";
+import { PhysicsEngine } from "./physics";
+import Viewport from "./viewport";
+import { clamp } from "../utils";
 
 // ================================
 // Rendering system
 // ================================
 export class Renderer {
-  private canvas: HTMLCanvasElement;
+  private viewport: Viewport;
   private ctx: CanvasRenderingContext2D;
   private physics: PhysicsEngine;
   private fpsMeter: FPSMeter;
   private isTextureLoaded = false;
   private textureImage: HTMLImageElement;
   private textureData: Uint8ClampedArray;
-  private renderPoints = true;
-  private renderConstraints = true;
+  private renderPoints = false;
+  private renderConstraints = false;
+  private settings: Settings;
 
-  constructor(canvas: HTMLCanvasElement, physics: PhysicsEngine) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext("2d")!;
+  constructor(viewport: Viewport, physics: PhysicsEngine, settings: Settings) {
+    this.viewport = viewport;
     this.physics = physics;
+    this.settings = settings;
+
+    this.ctx = viewport.canvas.getContext("2d")!;
 
     this.fpsMeter = {
       v: 0,
@@ -39,7 +50,7 @@ export class Renderer {
         ctx.font = "14px monospace";
         ctx.fillStyle = "rgba(128, 128, 128, 0.8)";
         ctx.textAlign = "right";
-        ctx.fillText(`${this.v} FPS`, canvas.width - 10, 20);
+        ctx.fillText(`${this.v} FPS`, viewport.canvas.width / 2 - 10, 20);
         ctx.restore();
       },
     };
@@ -51,7 +62,7 @@ export class Renderer {
 
   private async loadTexture(): Promise<void> {
     try {
-      const response = await fetch(SETTINGS.textureImage);
+      const response = await fetch(this.settings.textureImage);
       if (!response.ok) throw new Error("Failed to load texture");
 
       const blob = await response.blob();
@@ -74,10 +85,15 @@ export class Renderer {
 
   render(): void {
     // Clear canvas
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.clearRect(
+      0,
+      0,
+      this.viewport.canvas.width,
+      this.viewport.canvas.height,
+    );
 
     // Render floor if enabled
-    if (SETTINGS.showFloor) {
+    if (this.settings.showFloor) {
       this.renderFloor();
     }
 
@@ -100,18 +116,21 @@ export class Renderer {
       // const depth = height - this.canvas.height;
 
       // Color based on depth (pits are darker)
-      const darkness = Math.min(255, 100 + (this.canvas.height - height) * 0.5);
+      const darkness = Math.min(
+        255,
+        100 + (this.viewport.canvas.height - height) * 0.5,
+      );
       this.ctx.fillStyle = `rgb(${darkness}, ${darkness}, ${darkness + 20})`;
 
       this.ctx.beginPath();
       this.ctx.moveTo(seg.x1, seg.y1);
       this.ctx.lineTo(seg.x2, seg.y2);
-      this.ctx.lineTo(seg.x2, this.canvas.height);
-      this.ctx.lineTo(seg.x1, this.canvas.height);
+      this.ctx.lineTo(seg.x2, this.viewport.canvas.height);
+      this.ctx.lineTo(seg.x1, this.viewport.canvas.height);
       this.ctx.closePath();
       this.ctx.fill();
 
-      // Draw surface line
+      // Draw Viewport line
       this.ctx.strokeStyle = "#888";
       this.ctx.lineWidth = 2;
       this.ctx.beginPath();
@@ -242,7 +261,7 @@ export class Renderer {
           mouse.point.y,
           this.ctx.lineWidth,
           0,
-          Math.PI * 2
+          Math.PI * 2,
         );
         this.ctx.fill();
       }
