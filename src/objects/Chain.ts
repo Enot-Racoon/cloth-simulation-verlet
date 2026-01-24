@@ -1,15 +1,20 @@
-import { Point, Constraint } from '../types';
-import { SkeletonBase } from '../core/SkeletonObject';
+import { SkeletonBase } from "../core/SkeletonObject";
 
 // ================================
 // Chain object implementation
 // ================================
 export class Chain extends SkeletonBase {
   private segmentCount: number;
-  private segmentLength: number;
+  public segmentLength: number;
   private flexibility: number;
 
-  constructor(startX: number, startY: number, segmentLength: number, segmentCount: number, flexibility: number = 1.0) {
+  constructor(
+    startX: number,
+    startY: number,
+    segmentLength: number,
+    segmentCount: number,
+    flexibility: number = 1.0,
+  ) {
     super();
     this.segmentLength = segmentLength;
     this.segmentCount = segmentCount;
@@ -19,15 +24,16 @@ export class Chain extends SkeletonBase {
 
   private createChain(startX: number, startY: number): void {
     // Create points for the chain
+    const f = 0.7071067811865475; // 1 / Math.sqrt(2)
     for (let i = 0; i < this.segmentCount + 1; i++) {
-      const x = startX + i * this.segmentLength / 2;
-      const y = startY + i * this.segmentLength / 2;
+      const x = startX + i * this.segmentLength * f;
+      const y = startY + i * this.segmentLength * f;
       this.addPoint(x, y, i === 0); // Pin the first point
     }
 
     // Create constraints between adjacent points
     for (let i = 0; i < this.segmentCount; i++) {
-      this.addConstraint(i, i + 1, this.segmentLength, 2.0);
+      this.addConstraint(i, i + 1, this.segmentLength, 0.0);
     }
   }
 
@@ -42,9 +48,9 @@ export class Chain extends SkeletonBase {
       ctx.lineTo(this.points[i].x, this.points[i].y);
     }
 
-    ctx.strokeStyle = 'rgba(180, 180, 180, 0.8)';
+    ctx.strokeStyle = "rgba(180, 180, 180, 0.8)";
     ctx.lineWidth = 3;
-    ctx.lineCap = 'round';
+    ctx.lineCap = "round";
     ctx.stroke();
 
     // Draw connection points
@@ -52,7 +58,8 @@ export class Chain extends SkeletonBase {
       const point = this.points[i];
       ctx.beginPath();
       ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
-      ctx.fillStyle = i === 0 ? 'red' : 'rgba(100, 100, 100, 0.8)';
+      ctx.fillStyle =
+        i === 0 ? "hsla(0, 80%, 40%, 0.70)" : "rgba(100, 100, 100, 0.8)";
       ctx.fill();
     }
   }
@@ -63,6 +70,7 @@ export class Chain extends SkeletonBase {
   }
 
   applyCustomPhysics(): void {
+    return;
     // Apply custom physics for chain flexibility
     // This could include additional constraints or forces based on the flexibility parameter
     if (this.flexibility < 1.0) {

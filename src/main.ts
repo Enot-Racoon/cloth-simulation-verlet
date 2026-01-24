@@ -1,9 +1,10 @@
 import { SETTINGS } from "./core/settings";
-import { SoftBody } from "./objects";
+import { Chain, SoftBody } from "./objects";
 import { withKeyboardControl } from "./core/decorator";
 import RuntimeContext from "./core/context";
 import type { Settings } from "./types";
 import Bike from "./objects/bike";
+import Hose from "./objects/hose";
 
 class App {
   private lastTime = 0;
@@ -83,14 +84,10 @@ class App {
     // );
 
     // Add a chain object
-    // const chain = new Chain(
-    //   window.innerWidth / 3,
-    //   100,
-    //   40,
-    //   16,
-    //   0.8
-    // );
-    // this.simulationManager.addObject(chain);
+    // const chain = new Chain(window.innerWidth / 3, 100, 40, 16, 0.8);
+    this.context.simulation.addObject(
+      new Hose(window.innerWidth / 3, 100, 40, 10),
+    );
   }
 
   private update = (dt: number): void => {
