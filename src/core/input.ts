@@ -10,13 +10,16 @@ export class InputManager implements Disposable {
   private releasedKeys = new Set<string>();
   private mouse: Mouse;
   private accelerometer: AccelerometerData;
-  private physics: PhysicsEngine;
-  private canvas: HTMLCanvasElement;
   private toDispose: (() => void)[] = [];
 
-  constructor(canvas: HTMLCanvasElement, physics: PhysicsEngine) {
-    this.canvas = canvas;
-    this.physics = physics;
+  constructor(
+    private canvas: HTMLCanvasElement,
+    private physics: PhysicsEngine,
+    private correctionFn: (x: number, y: number) => { x: number; y: number } = (
+      x,
+      y,
+    ) => ({ x, y }),
+  ) {
     this.mouse = {
       x: 0,
       y: 0,
@@ -52,6 +55,12 @@ export class InputManager implements Disposable {
     };
   }
 
+  setCorrectionFn(
+    correctionFn: (x: number, y: number) => { x: number; y: number },
+  ) {
+    this.correctionFn = correctionFn;
+  }
+
   update() {
     this.updateMousePoint();
     this.applyMouseInteraction();
@@ -59,9 +68,10 @@ export class InputManager implements Disposable {
 
   private updateMousePoint(): void {
     if (!this.mouse.down) {
+      const corrected = this.correctionFn(this.mouse.x, this.mouse.y);
       this.mouse.point = this.physics.findNearestPoint(
-        this.mouse.x,
-        this.mouse.y,
+        corrected.x,
+        corrected.y,
         this.mouse.radius,
       );
     }
@@ -125,9 +135,10 @@ export class InputManager implements Disposable {
       this.mouse.y = e.clientY - rect.top;
       this.mouse.down = true;
 
+      const corrected = this.correctionFn(this.mouse.x, this.mouse.y);
       this.mouse.point = this.physics.findNearestPoint(
-        this.mouse.x,
-        this.mouse.y,
+        corrected.x,
+        corrected.y,
         this.mouse.radius,
       );
 
@@ -159,9 +170,10 @@ export class InputManager implements Disposable {
       this.mouse.y += (y - this.mouse.y) * smoothing;
 
       if (!this.mouse.down) {
+        const corrected = this.correctionFn(x, y);
         this.mouse.point = this.physics.findNearestPoint(
-          x,
-          y,
+          corrected.x,
+          corrected.y,
           this.mouse.radius,
         );
       }

@@ -61,6 +61,15 @@ export interface Face {
   uv3: UV;
 }
 
+export interface CRTSettings {
+  curvature: number;
+  rgbSplit: number;
+  scanline: number;
+  wobble: number;
+  noise: number;
+  vignette: number;
+}
+
 export interface Settings {
   gravity: number;
   friction: number;
@@ -70,6 +79,7 @@ export interface Settings {
   floorOffset: number;
   mouseRadius: number;
   textureImage: string;
+  crt: CRTSettings;
 }
 
 export interface Mouse {

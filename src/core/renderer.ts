@@ -68,6 +68,10 @@ export class Renderer {
     this.setupCanvas();
   }
 
+  get isPostProcess(): boolean {
+    return this.postProcess;
+  }
+
   private async loadTexture(): Promise<void> {
     try {
       const response = await fetch(this.settings.textureImage);
@@ -319,13 +323,6 @@ export class Renderer {
   }
 
   postprocess(dt: number): void {
-    this.crtPass.render(this.ctx.canvas, dt, {
-      curvature: 0.05,
-      rgbSplit: 0.001,
-      scanline: 0.2,
-      wobble: 0.0005,
-      noise: 0.04,
-      vignette: 0.8,
-    });
+    this.crtPass.render(this.ctx.canvas, dt, this.settings.crt);
   }
 }

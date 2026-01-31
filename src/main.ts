@@ -6,6 +6,51 @@ import type { Settings } from "./types";
 import Bike from "./objects/bike";
 import Hose from "./objects/hose";
 
+function correctMousePosition(
+  canvasX: number,
+  canvasY: number,
+  canvasWidth: number,
+  canvasHeight: number,
+  curvature: number,
+) {
+  // Normalize to 0-1 (screen UV coordinates)
+  let screenUV = {
+    x: canvasX / canvasWidth,
+    y: canvasY / canvasHeight,
+  };
+
+  // Apply the SAME curve transformation as in shader
+  // Convert to -1 to 1 range (centered)
+  let p = {
+    x: screenUV.x * 2.0 - 1.0,
+    y: screenUV.y * 2.0 - 1.0,
+  };
+
+  // Apply curvature (same as shader)
+  let r2 = p.x * p.x + p.y * p.y;
+  let distortion = 1.0 + r2 * curvature;
+
+  p.x *= distortion;
+  p.y *= distortion;
+
+  // Convert back to 0-1 range - this is the corrected UV
+  let correctedUV = {
+    x: p.x * 0.5 + 0.5,
+    y: p.y * 0.5 + 0.5,
+  };
+
+  // Convert back to canvas coordinates
+  return {
+    x: correctedUV.x * canvasWidth,
+    y: correctedUV.y * canvasHeight,
+    valid:
+      correctedUV.x >= 0 &&
+      correctedUV.x <= 1 &&
+      correctedUV.y >= 0 &&
+      correctedUV.y <= 1,
+  };
+}
+
 class App {
   private lastTime = 0;
   private running = false;
@@ -15,7 +60,20 @@ class App {
   constructor(settings: Settings) {
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 
-    this.context = new RuntimeContext(canvas, settings);
+    const context = new RuntimeContext(canvas, settings);
+    this.context = context;
+    this.context.input.setCorrectionFn((x, y) => {
+      if (context.renderer.isPostProcess) {
+        return correctMousePosition(
+          x,
+          y,
+          context.viewport.width,
+          context.viewport.height,
+          context.settings.crt.curvature,
+        );
+      }
+      return { x, y };
+    });
 
     this.setupScene();
     this.initializeObjects();
