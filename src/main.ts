@@ -90,13 +90,20 @@ class App {
     );
   }
 
+  processInput(): void {
+    this.context.input.applyMouseInteraction();
+    if (this.context.input.isReleased("p")) {
+      this.context.renderer.togglePostProcess();
+    }
+  }
+
   private update = (dt: number): void => {
     // Apply forces
     const gravity = this.context.input.getGravity();
     this.context.physics.applyForces(gravity); // todo: add dt
 
     // Handle mouse interaction
-    this.context.input.applyMouseInteraction();
+    this.processInput();
 
     // Update physics
     this.context.physics.update(); // todo: add dt

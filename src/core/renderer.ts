@@ -31,10 +31,6 @@ export class Renderer {
     private settings: Settings,
   ) {
     this.ctx = viewport.canvas.getContext("2d")!;
-    if (!this.postProcess) {
-      viewport.canvasPost.style.display = "none";
-    }
-
     this.crtPass = createCRTPass(viewport.canvasPost);
 
     this.fpsMeter = {
@@ -299,8 +295,17 @@ export class Renderer {
     this.fpsMeter.update();
   }
 
+  togglePostProcess(): void {
+    this.postProcess = !this.postProcess;
+  }
+
   postprocess(dt: number): void {
-    if (!this.postProcess) return;
+    if (!this.postProcess) {
+      this.viewport.canvasPost.style.display = "none";
+      return;
+    } else if (this.viewport.canvasPost.style.display === "none") {
+      this.viewport.canvasPost.style.display = "block";
+    }
 
     this.crtPass.render(this.ctx.canvas, dt, {
       curvature: 0.05,
