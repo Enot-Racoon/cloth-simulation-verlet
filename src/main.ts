@@ -99,7 +99,7 @@ class App {
       this.context.renderer.togglePostProcess();
     }
 
-    this.context.input.applyMouseInteraction();
+    this.context.input.update();
   }
 
   private update = (dt: number): void => {

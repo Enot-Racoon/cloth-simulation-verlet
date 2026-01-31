@@ -10,6 +10,10 @@ export default class Hose extends Chain {
     segmentCount: number,
   ) {
     super(startX, startY, segmentLength, segmentCount);
+
+    const lastPoint = this.points[this.points.length - 1];
+    lastPoint.y = this.points[0].y;
+    lastPoint.pinned = true;
   }
 
   cross(ctx: CanvasRenderingContext2D, x: number, y: number) {
@@ -68,20 +72,21 @@ export default class Hose extends Chain {
     this.ctx.debug.setDebugData(
       "Angles",
       angles
-        .map((angle) => (angle * 180) / Math.PI)
-        .map((angle) => angle.toFixed(0).padStart(6, " ")),
+        // .map((angle) => ((angle * 180) / Math.PI + 360) % 360)
+        .map((angle) => angle.toFixed(2).padStart(6, " ")),
     );
     this.ctx.debug.setDebugData(
       "Diffs",
       angles
-        .map((angle) => (angle * 180) / Math.PI)
+        // .map((angle) => ((angle * 180) / Math.PI + 360) % 360)
+
         .reduce((acc, angle, i, angles) => {
           if (i === 0) return [];
           const diff = angle - angles[i - 1];
           acc.push(diff);
           return acc;
         }, [] as number[])
-        .map((angle) => angle.toFixed(0).padStart(6, " ")),
+        .map((angle) => angle.toFixed(2).padStart(6, " ")),
     );
 
     // start cap
@@ -100,10 +105,14 @@ export default class Hose extends Chain {
       const prevAngle = angles[i - 1];
       const diffAngle = angle - prevAngle;
 
-      // if(Math.abs(diffAngle) > Math.PI / 2) {
+      // if(Math.abs(diffAngle) > 0) {
 
       // }
 
+      ctx.lineTo(
+        this.points[i - 1].x - Math.cos(angle + Math.PI / 2) * radius,
+        this.points[i - 1].y - Math.sin(angle + Math.PI / 2) * radius,
+      );
       ctx.lineTo(
         this.points[i].x - Math.cos(angle + Math.PI / 2) * radius,
         this.points[i].y - Math.sin(angle + Math.PI / 2) * radius,

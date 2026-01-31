@@ -52,7 +52,22 @@ export class InputManager implements Disposable {
     };
   }
 
-  applyMouseInteraction(): void {
+  update() {
+    this.updateMousePoint();
+    this.applyMouseInteraction();
+  }
+
+  private updateMousePoint(): void {
+    if (!this.mouse.down) {
+      this.mouse.point = this.physics.findNearestPoint(
+        this.mouse.x,
+        this.mouse.y,
+        this.mouse.radius,
+      );
+    }
+  }
+
+  private applyMouseInteraction(): void {
     if (!this.mouse.down || !this.mouse.point) return;
 
     this.mouse.point.x = this.mouse.x;

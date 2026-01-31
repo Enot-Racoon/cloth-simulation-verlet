@@ -33,6 +33,8 @@ export class Renderer {
     this.ctx = viewport.canvas.getContext("2d")!;
     this.crtPass = createCRTPass(viewport.canvasPost);
 
+    const self = this;
+
     this.fpsMeter = {
       v: 0,
       lastTime: performance.now(),
@@ -48,10 +50,14 @@ export class Renderer {
       },
       render(ctx: CanvasRenderingContext2D) {
         ctx.save();
-        ctx.font = "24px monospace";
-        ctx.fillStyle = "rgba(128, 128, 128, 0.8)";
+        ctx.font = `${self.postProcess ? 32 : 24}px monospace`;
+        ctx.fillStyle = self.postProcess ? "#0c0" : "rgba(128, 128, 128, 0.8)";
         ctx.textAlign = "right";
-        ctx.fillText(`${this.v} FPS`, viewport.canvas.width / 2 - 10, 20);
+        ctx.fillText(
+          `${this.v} FPS`,
+          viewport.canvas.width / 2 - (self.postProcess ? 0 : 20),
+          self.postProcess ? 24 : 40,
+        );
         ctx.restore();
       },
     };
@@ -59,6 +65,7 @@ export class Renderer {
     this.textureImage = new Image();
     this.textureData = new Uint8ClampedArray();
     this.loadTexture();
+    this.setupCanvas();
   }
 
   private async loadTexture(): Promise<void> {
@@ -297,7 +304,10 @@ export class Renderer {
 
   togglePostProcess(): void {
     this.postProcess = !this.postProcess;
+    this.setupCanvas();
+  }
 
+  private setupCanvas() {
     if (!this.postProcess) {
       this.viewport.canvas.style.display = "block";
       this.viewport.canvasPost.style.opacity = "0";
