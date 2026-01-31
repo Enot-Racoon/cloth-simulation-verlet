@@ -6,31 +6,36 @@ import type {
   FPSMeter,
   Settings,
 } from "../types";
+import { clamp } from "../utils";
 import { PhysicsEngine } from "./physics";
 import Viewport from "./viewport";
-import { clamp } from "../utils";
+import { createCRTPass, CRTPass } from "./postprocess";
 
 // ================================
 // Rendering system
 // ================================
 export class Renderer {
-  private viewport: Viewport;
   private ctx: CanvasRenderingContext2D;
-  private physics: PhysicsEngine;
   private fpsMeter: FPSMeter;
   private isTextureLoaded = false;
   private textureImage: HTMLImageElement;
   private textureData: Uint8ClampedArray;
   private renderPoints = false;
   private renderConstraints = false;
-  private settings: Settings;
+  private crtPass: CRTPass;
+  private postProcess = false;
 
-  constructor(viewport: Viewport, physics: PhysicsEngine, settings: Settings) {
-    this.viewport = viewport;
-    this.physics = physics;
-    this.settings = settings;
-
+  constructor(
+    private viewport: Viewport,
+    private physics: PhysicsEngine,
+    private settings: Settings,
+  ) {
     this.ctx = viewport.canvas.getContext("2d")!;
+    if (!this.postProcess) {
+      viewport.canvasPost.style.display = "none";
+    }
+
+    this.crtPass = createCRTPass(viewport.canvasPost);
 
     this.fpsMeter = {
       v: 0,
@@ -91,6 +96,14 @@ export class Renderer {
       this.viewport.canvas.width,
       this.viewport.canvas.height,
     );
+
+    // border
+    // this.ctx.save();
+    // this.ctx.strokeStyle = "#ff0000d8";
+    // this.ctx.lineWidth = 4;
+    // this.ctx.rect(4, 4, this.viewport.width - 8, this.viewport.height - 8);
+    // this.ctx.stroke();
+    // this.ctx.restore();
 
     // Render floor if enabled
     if (this.settings.showFloor) {
@@ -284,5 +297,18 @@ export class Renderer {
 
   update(): void {
     this.fpsMeter.update();
+  }
+
+  postprocess(dt: number): void {
+    if (!this.postProcess) return;
+
+    this.crtPass.render(this.ctx.canvas, dt, {
+      curvature: 0.05,
+      rgbSplit: 0.001,
+      scanline: 0.4,
+      wobble: 0.0005,
+      noise: 0.04,
+      vignette: 0.8,
+    });
   }
 }

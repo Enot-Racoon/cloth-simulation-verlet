@@ -21,7 +21,7 @@ class RuntimeContext {
     this.settings = settings;
     this.viewport = new Viewport(canvas);
     this.physics = new PhysicsEngine();
-    this.input = new InputManager(canvas, this.physics);
+    this.input = new InputManager(this.viewport.canvasPost, this.physics);
     this.renderer = new Renderer(this.viewport, this.physics, settings);
     this.initializer = new ObjectInitializer(this.physics);
     this.debug = new DebugManager();
