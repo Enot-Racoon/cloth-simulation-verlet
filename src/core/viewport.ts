@@ -20,10 +20,8 @@ export default class Viewport {
     this.ctx = canvas.getContext("2d")!;
 
     this.canvasPost = document.createElement("canvas");
-    this.canvasPost.width = canvas.width;
-    this.canvasPost.height = canvas.height;
-    this.canvasPost.style.position = "absolute";
     this.canvasPost.style.inset = "0";
+    this.canvasPost.style.position = "absolute";
     this.canvasPost.style.width = canvas.style.width;
     this.canvasPost.style.height = canvas.style.height;
 
@@ -37,15 +35,15 @@ export default class Viewport {
     // clear by resize
     this.canvas.width = Math.floor(this.width * this.dpr);
     this.canvas.height = Math.floor(this.height * this.dpr);
-    this.canvasPost.width = this.canvas.width;
-    this.canvasPost.height = this.canvas.height;
+    this.canvasPost.width = this.width;
+    this.canvasPost.height = this.height;
   }
 
   resize() {
     this.canvas.width = Math.floor(this.width * this.dpr);
     this.canvas.height = Math.floor(this.height * this.dpr);
-    this.canvasPost.width = this.canvas.width;
-    this.canvasPost.height = this.canvas.height;
+    this.canvasPost.width = this.canvas.width / 4;
+    this.canvasPost.height = this.canvas.height / 4;
 
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     // this.ctxPost.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);

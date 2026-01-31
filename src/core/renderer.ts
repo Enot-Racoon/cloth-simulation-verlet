@@ -48,7 +48,7 @@ export class Renderer {
       },
       render(ctx: CanvasRenderingContext2D) {
         ctx.save();
-        ctx.font = "14px monospace";
+        ctx.font = "24px monospace";
         ctx.fillStyle = "rgba(128, 128, 128, 0.8)";
         ctx.textAlign = "right";
         ctx.fillText(`${this.v} FPS`, viewport.canvas.width / 2 - 10, 20);
@@ -297,20 +297,22 @@ export class Renderer {
 
   togglePostProcess(): void {
     this.postProcess = !this.postProcess;
+
+    if (!this.postProcess) {
+      this.viewport.canvas.style.display = "block";
+      this.viewport.canvasPost.style.opacity = "0";
+      return;
+    } else if (this.viewport.canvasPost.style.opacity === "0") {
+      this.viewport.canvas.style.display = "none";
+      this.viewport.canvasPost.style.opacity = "1";
+    }
   }
 
   postprocess(dt: number): void {
-    if (!this.postProcess) {
-      this.viewport.canvasPost.style.display = "none";
-      return;
-    } else if (this.viewport.canvasPost.style.display === "none") {
-      this.viewport.canvasPost.style.display = "block";
-    }
-
     this.crtPass.render(this.ctx.canvas, dt, {
       curvature: 0.05,
       rgbSplit: 0.001,
-      scanline: 0.4,
+      scanline: 0.2,
       wobble: 0.0005,
       noise: 0.04,
       vignette: 0.8,
