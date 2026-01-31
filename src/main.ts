@@ -91,10 +91,15 @@ class App {
   }
 
   processInput(): void {
-    this.context.input.applyMouseInteraction();
+    if (this.context.input.isReleased("r")) {
+      location.reload();
+    }
+
     if (this.context.input.isReleased("p")) {
       this.context.renderer.togglePostProcess();
     }
+
+    this.context.input.applyMouseInteraction();
   }
 
   private update = (dt: number): void => {

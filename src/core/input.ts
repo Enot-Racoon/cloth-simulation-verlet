@@ -158,10 +158,6 @@ export class InputManager implements Disposable {
       this.pressedKeys.add(e.key);
       this.releasedKeys.delete(e.key);
 
-      if (e.key === "r") {
-        location.reload();
-      }
-
       if (e.key === " " && this.mouse.point) {
         if (this.mouse.down) {
           this.mouse.initialPinned = !this.mouse.initialPinned;
