@@ -1,29 +1,4 @@
-export const Dim = {
-  X: 0,
-  Y: 1,
-  Z: 2,
-  W: 3,
-} as const;
-
-export type Vec = readonly number[];
-export type MutableVec = number[];
-
-export type Vec2 = readonly [number, number];
-export type Vec3 = readonly [number, number, number];
-export type Vec4 = readonly [number, number, number, number];
-
-export type Position3 = Vec3;
-export type Direction3 = Vec3;
-export type Homogeneous = Vec4;
-
-export interface Vector2D {
-  x: number;
-  y: number;
-}
-
-export interface Vector3D extends Vector2D {
-  z: number;
-}
+export * from "./vector";
 
 export interface Point {
   x: number;
