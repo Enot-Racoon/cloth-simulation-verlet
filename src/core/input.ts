@@ -195,12 +195,28 @@ export class InputManager implements Disposable {
     });
 
     this.addWindowEventListener("keyup", (e: KeyboardEvent) => {
-      this.pressedKeys.delete(e.key);
-      this.releasedKeys.add(e.key);
+      if (e.key === "Meta") {
+        this.pressedKeys.forEach((key) => this.releasedKeys.add(key));
+        this.releasedKeys.add(e.key);
+        this.pressedKeys.clear();
+      } else {
+        this.pressedKeys.delete(e.key);
+        this.releasedKeys.add(e.key);
+      }
     });
 
     // Accelerometer
     this.addWindowEventListener("devicemotion", this.handleMotion.bind(this));
+
+    this.addWindowEventListener(
+      "wheel",
+      (e: WheelEvent) => {
+        e.preventDefault();
+        this.mouse.radius += e.deltaY * 0.04;
+        this.mouse.radius = Math.max(10, Math.min(this.mouse.radius, 100));
+      },
+      { passive: false },
+    );
   }
 
   private handleMotion(event: DeviceMotionEvent): void {

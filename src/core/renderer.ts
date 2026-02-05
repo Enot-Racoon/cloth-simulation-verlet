@@ -53,8 +53,14 @@ export class Renderer {
         ctx.font = `${self.postProcess ? 32 : 24}px monospace`;
         ctx.fillStyle = self.postProcess ? "#0c0" : "rgba(128, 128, 128, 0.8)";
         ctx.textAlign = "right";
+        const fps =
+          this.v ||
+          Math.round(
+            (this.frames * 1000) / (performance.now() - this.lastTime),
+          );
+
         ctx.fillText(
-          `${this.v} FPS`,
+          `${fps} FPS`,
           viewport.canvas.width / 2 - (self.postProcess ? 0 : 20),
           self.postProcess ? 24 : 40,
         );

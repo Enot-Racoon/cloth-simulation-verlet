@@ -3,23 +3,23 @@ import RuntimeContext from "../core/context";
 
 type Circle = { x: number; y: number; r: number };
 
-export default class Hose extends Chain {
-  constructor(
-    private ctx: RuntimeContext,
-    startX: number,
-    startY: number,
-    segmentLength: number,
-    segmentCount: number,
-  ) {
-    super(startX, startY, segmentLength, segmentCount);
+class HoseRenderer {
+  constructor(private hose: Hose) {}
 
-    const lastPoint = this.points[this.points.length - 1];
-    lastPoint.y = this.points[0].y;
-    lastPoint.pinned = true;
+  private renderSkeletonLine(ctx: CanvasRenderingContext2D) {
+    ctx.beginPath();
+    for (const point of this.hose.points) {
+      ctx.lineTo(point.x, point.y);
+    }
+    ctx.stroke();
   }
 
-  cross(ctx: CanvasRenderingContext2D, x: number, y: number) {
-    const radius = this.segmentLength / 2;
+  private renderCrossPointsUnit(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+  ) {
+    const radius = this.hose.segmentLength / 2;
 
     const cross = {
       c: { x, y },
@@ -39,50 +39,52 @@ export default class Hose extends Chain {
     ctx.restore();
   }
 
-  buildOutlinePath(): Path2D {
+  private renderCrossPoints(ctx: CanvasRenderingContext2D) {
+    for (const point of this.hose.points) {
+      this.renderCrossPointsUnit(ctx, point.x, point.y);
+    }
+  }
+
+  private buildOutlinePath(): Path2D {
     const path = new Path2D();
     return path;
   }
 
-  render(ctx: CanvasRenderingContext2D): void {
-    // super.render(ctx);
-    if (this.points.length < 2) return;
-
-    // for (const point of this.points) {
-    //   this.cross(ctx, point.x, point.y);
-    // }
-
-    ctx.beginPath();
-    for (const point of this.points) {
-      ctx.lineTo(point.x, point.y);
-    }
-    ctx.stroke();
-
-    const radius = this.segmentLength / 2;
+  private renderCircles(ctx: CanvasRenderingContext2D) {
+    const radius = this.hose.segmentLength / 2;
     ctx.fillStyle = "rgba(100, 100, 100, 0.8)";
-    for (let i = 0; i < this.points.length; i++) {
-      const point = this.points[i];
+    for (let i = 0; i < this.hose.points.length; i++) {
+      const point = this.hose.points[i];
       ctx.beginPath();
       ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
       ctx.stroke();
     }
+  }
 
-    //
+  render(ctx: CanvasRenderingContext2D) {
+    if (this.hose.points.length < 2) return;
 
+    // this.renderSkeletonLine(ctx);
+    // this.renderCrossPoints(ctx);
+    // this.renderCircles(ctx);
+    this.renderDebug(ctx);
+  }
+
+  private renderAngles() {
     const angles: number[] = [];
-    for (let i = 1; i < this.points.length; i++) {
-      const point = this.points[i];
-      const prev = this.points[i - 1];
+    for (let i = 1; i < this.hose.points.length; i++) {
+      const point = this.hose.points[i];
+      const prev = this.hose.points[i - 1];
       angles.push(Math.atan2(point.y - prev.y, point.x - prev.x));
     }
 
-    this.ctx.debug.setDebugData(
+    this.hose.ctx.debug.setDebugData(
       "Angles",
       angles
         // .map((angle) => ((angle * 180) / Math.PI + 360) % 360)
         .map((angle) => angle.toFixed(2).padStart(6, " ")),
     );
-    this.ctx.debug.setDebugData(
+    this.hose.ctx.debug.setDebugData(
       "Diffs",
       angles
         // .map((angle) => ((angle * 180) / Math.PI + 360) % 360)
@@ -95,166 +97,239 @@ export default class Hose extends Chain {
         }, [] as number[])
         .map((angle) => angle.toFixed(2).padStart(6, " ")),
     );
+  }
 
-    // start cap
+  private renderDebug(ctx: CanvasRenderingContext2D) {
+    this.renderAngles();
+
+    this.renderStarCap(ctx);
+    this.renderEndCap(ctx);
+    this.renderTangentLines(ctx);
+  }
+
+  private renderStarCap(ctx: CanvasRenderingContext2D) {
+    const radius = this.hose.segmentLength / 2;
+    const point = this.hose.points[1];
+    const prev = this.hose.points[0];
+    const angle = Math.atan2(point.y - prev.y, point.x - prev.x);
+
     const startCap = new Path2D();
     startCap.arc(
-      this.points[0].x,
-      this.points[0].y,
+      this.hose.points[0].x,
+      this.hose.points[0].y,
       radius,
-      angles[0] + Math.PI / 2,
-      angles[0] - Math.PI / 2,
+      angle + Math.PI / 2,
+      angle - Math.PI / 2,
     );
-
-    ctx.fill(startCap);
-
-    {
-      for (let i = 1; i < this.points.length; i++) {
-        const currentPoint = this.points[i];
-        const prevPoint = this.points[i - 1];
-        const angle = Math.atan2(
-          currentPoint.y - prevPoint.y,
-          currentPoint.x - prevPoint.x,
-        );
-
-        // ctx.fillRect(
-        //   currentPoint.x - radius,
-        //   currentPoint.y - radius,
-        //   radius * 2,
-        //   radius * 2,
-        // );
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.fillStyle = "red";
-        ctx.arc(
-          prevPoint.x + Math.sin(angle) * radius,
-          prevPoint.y - Math.cos(angle) * radius,
-          4,
-          0,
-          Math.PI * 2,
-        );
-        ctx.arc(
-          prevPoint.x - Math.sin(angle) * radius,
-          prevPoint.y + Math.cos(angle) * radius,
-          4,
-          0,
-          Math.PI * 2,
-        );
-        ctx.fill();
-        ctx.restore();
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.fillStyle = "green";
-        ctx.arc(
-          currentPoint.x + Math.sin(angle) * radius,
-          currentPoint.y - Math.cos(angle) * radius,
-          4,
-          0,
-          Math.PI * 2,
-        );
-        ctx.arc(
-          currentPoint.x - Math.sin(angle) * radius,
-          currentPoint.y + Math.cos(angle) * radius,
-          4,
-          0,
-          Math.PI * 2,
-        );
-        ctx.fill();
-        ctx.restore();
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.fillStyle = "magenta";
-        ctx.arc(
-          (prevPoint.x +
-            Math.sin(angle) * radius +
-            (currentPoint.x + Math.sin(angle) * radius)) /
-            2,
-          (prevPoint.y -
-            Math.cos(angle) * radius +
-            (currentPoint.y - Math.cos(angle) * radius)) /
-            2,
-          2,
-          0,
-          Math.PI * 2,
-        );
-        ctx.fill();
-        ctx.restore();
-      }
-    }
 
     ctx.stroke(startCap);
+  }
 
-    ctx.beginPath();
-    // right side
-    for (let i = 1; i <= angles.length; i++) {
-      const angle = angles[i];
-      const prevAngle = angles[i - 1];
-      const diffAngle = angle - prevAngle;
+  private renderEndCap(ctx: CanvasRenderingContext2D) {
+    const radius = this.hose.segmentLength / 2;
+    const point = this.hose.points[this.hose.points.length - 1];
+    const prev = this.hose.points[this.hose.points.length - 2];
+    const angle = Math.atan2(point.y - prev.y, point.x - prev.x);
 
-      if (Math.abs(diffAngle) < 0.01) {
-        // ctx.lineTo(
-        //   this.points[i].x - Math.cos(angle + Math.PI / 2) * radius,
-        //   this.points[i].y - Math.sin(angle + Math.PI / 2) * radius,
-        // );
-      } else {
-        // const p0 = this.points[i - 1];
-        // const p1 = this.points[i];
-        // const p0x = p0.x - Math.cos(angle + Math.PI / 2) * radius;
-        // const p0y = p0.y - Math.sin(angle + Math.PI / 2) * radius;
-        // const p1x = p1.x - Math.cos(angle + Math.PI / 2) * radius;
-        // const p1y = p1.y - Math.sin(angle + Math.PI / 2) * radius;
-        // ctx.save();
-        // ctx.strokeStyle = "red";
-        // ctx.arc(p0x, p0y, 4, angle + Math.PI / 2, angle - Math.PI / 2);
-        // ctx.stroke();
-        // ctx.restore();
-      }
-
-      // ctx.rect(
-      //   this.points[i].x - Math.cos(angle + Math.PI / 2) * radius,
-      //   this.points[i].y - Math.sin(angle + Math.PI / 2) * radius,
-      // );
-
-      // ctx.lineTo(
-      //   this.points[i].x - Math.cos(angle + Math.PI / 2) * radius,
-      //   this.points[i].y - Math.sin(angle + Math.PI / 2) * radius,
-      // );
-    }
-
-    // end cap
-    ctx.arc(
-      this.points[this.points.length - 1].x,
-      this.points[this.points.length - 1].y,
+    const endCap = new Path2D();
+    endCap.arc(
+      this.hose.points[this.hose.points.length - 1].x,
+      this.hose.points[this.hose.points.length - 1].y,
       radius,
-      angles[angles.length - 1] - Math.PI / 2,
-      angles[angles.length - 1] + Math.PI / 2,
+      angle - Math.PI / 2,
+      angle + Math.PI / 2,
     );
 
-    {
-      const endCap = new Path2D();
-      endCap.arc(
-        this.points[this.points.length - 1].x,
-        this.points[this.points.length - 1].y,
-        radius,
-        angles[angles.length - 1] - Math.PI / 2,
-        angles[angles.length - 1] + Math.PI / 2,
-      );
-      ctx.fill(endCap);
-    }
+    ctx.stroke(endCap);
+  }
 
-    // left side
-    for (let i = angles.length - 1; i >= 0; i--) {
-      const angle = angles[i];
+  private renderPoint(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    radius = 4,
+  ) {
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.fill();
+  }
 
-      ctx.lineTo(
-        this.points[i].x - Math.cos(angle - Math.PI / 2) * radius,
-        this.points[i].y - Math.sin(angle - Math.PI / 2) * radius,
-      );
-    }
+  private renderTangentPoints(
+    ctx: CanvasRenderingContext2D,
+    current: { x: number; y: number },
+    prev: { x: number; y: number },
+    radius: number,
+  ) {
+    const angle = Math.atan2(current.y - prev.y, current.x - prev.x);
 
+    type P = { x: number; y: number };
+
+    const l1: P = {
+      x: prev.x + Math.sin(angle) * radius,
+      y: prev.y - Math.cos(angle) * radius,
+    };
+
+    const r1: P = {
+      x: prev.x - Math.sin(angle) * radius,
+      y: prev.y + Math.cos(angle) * radius,
+    };
+
+    const l2: P = {
+      x: current.x + Math.sin(angle) * radius,
+      y: current.y - Math.cos(angle) * radius,
+    };
+
+    const r2: P = {
+      x: current.x - Math.sin(angle) * radius,
+      y: current.y + Math.cos(angle) * radius,
+    };
+
+    // ctx.save();
+
+    // ctx.fillStyle = "red";
+    // this.renderPoint(ctx, l1.x, l1.y);
+    // ctx.fillStyle = "green";
+    // this.renderPoint(ctx, l2.x, l2.y);
+
+    // ctx.fillStyle = "darkred";
+    // this.renderPoint(ctx, r1.x, r1.y);
+    // ctx.fillStyle = "darkgreen";
+    // this.renderPoint(ctx, r2.x, r2.y);
+
+    // ctx.restore();
+
+    ctx.beginPath;
+    ctx.moveTo(l1.x, l1.y);
+    ctx.lineTo(l2.x, l2.y);
     ctx.stroke();
+
+    ctx.beginPath;
+    ctx.moveTo(r1.x, r1.y);
+    ctx.lineTo(r2.x, r2.y);
+    ctx.stroke();
+
+    const ecs = 1e-10;
+
+    if (angle < ecs) {
+    } else if (angle > ecs) {
+    }
+  }
+
+  private getCircleTangents(
+    a: Circle,
+    b: Circle,
+  ): Array<{ x: number; y: number }> {
+    const angle = Math.atan2(b.y - a.y, b.x - a.x);
+
+    return [
+      {
+        x: a.x + Math.sin(angle) * a.r,
+        y: a.y - Math.cos(angle) * a.r,
+      },
+      {
+        x: b.x + Math.sin(angle) * b.r,
+        y: b.y - Math.cos(angle) * b.r,
+      },
+      {
+        x: b.x - Math.sin(angle) * b.r,
+        y: b.y + Math.cos(angle) * b.r,
+      },
+      {
+        x: a.x - Math.sin(angle) * a.r,
+        y: a.y + Math.cos(angle) * a.r,
+      },
+    ];
+  }
+
+  private renderTangentPoints2(ctx: CanvasRenderingContext2D, i: number) {
+    const radius = this.hose.segmentLength / 2;
+
+    const prev = this.hose.points[i - 1];
+    const current = this.hose.points[i];
+
+    if (!prev || !current) return;
+
+    const a = { x: prev.x, y: prev.y, r: radius };
+    const b = { x: current.x, y: current.y, r: radius };
+    const [p1, p2, p3, p4] = this.getCircleTangents(a, b);
+
+    const angle = Math.atan2(current.y - prev.y, current.x - prev.x);
+
+    //
+
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(p3.x, p3.y);
+    ctx.lineTo(p4.x, p4.y);
+    ctx.stroke();
+
+    //
+
+    ctx.save();
+    ctx.fillStyle = "red";
+    this.renderPoint(ctx, p1.x, p1.y);
+    ctx.fillStyle = "green";
+    this.renderPoint(ctx, p2.x, p2.y);
+    ctx.fillStyle = "darkred";
+    this.renderPoint(ctx, p3.x, p3.y);
+    ctx.fillStyle = "darkgreen";
+    this.renderPoint(ctx, p4.x, p4.y);
+    ctx.restore();
+
+    const ecs = 1e-10;
+
+    if (angle < ecs) {
+    } else if (angle > ecs) {
+    }
+  }
+
+  private renderTangentLines(ctx: CanvasRenderingContext2D) {
+    // const radius = this.hose.segmentLength / 2;
+
+    for (let i = 1; i < this.hose.points.length; i++) {
+      // const currentPoint = this.hose.points[i];
+      // const prevPoint = this.hose.points[i - 1];
+
+      this.renderTangentPoints2(ctx, i);
+    }
+  }
+
+  private renderOutline(ctx: CanvasRenderingContext2D) {
+    const path = this.buildOutlinePath();
+    ctx.stroke(path);
+  }
+}
+
+export default class Hose extends Chain {
+  private renderer: HoseRenderer;
+
+  constructor(
+    public ctx: RuntimeContext,
+    startX: number,
+    startY: number,
+    segmentLength: number,
+    segmentCount: number,
+  ) {
+    super(startX, startY, segmentLength, segmentCount);
+
+    const firstPoint = this.points[0];
+    const lastPoint = this.points[this.points.length - 1];
+    lastPoint.x = (lastPoint.x - firstPoint.x) / 2 + firstPoint.x;
+    lastPoint.y = firstPoint.y;
+    lastPoint.pinned = true;
+
+    this.renderer = new HoseRenderer(this);
+  }
+
+  render(ctx: CanvasRenderingContext2D): void {
+    // super.render(ctx);
+
+    return this.renderer.render(ctx);
   }
 }
