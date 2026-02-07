@@ -144,7 +144,7 @@ class App {
     // Add a chain object
     // const chain = new Chain(window.innerWidth / 3, 100, 40, 16, 0.8);
     this.context.simulation.addObject(
-      new Hose(this.context, window.innerWidth / 3, 100, 60, 10),
+      new Hose(this.context, window.innerWidth / 3, 100, 100, 10),
     );
   }
 

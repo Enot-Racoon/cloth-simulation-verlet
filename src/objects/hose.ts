@@ -1,10 +1,24 @@
-import { Chain } from "./Chain";
+import { getIntersection, normalizeAngle, radToDeg } from "../utils";
 import RuntimeContext from "../core/context";
+import { Chain } from "./Chain";
 
 type Circle = { x: number; y: number; r: number };
 
 class HoseRenderer {
   constructor(private hose: Hose) {}
+
+  get debug() {
+    return this.hose.ctx.debug;
+  }
+
+  get circles() {
+    const radius = this.hose.segmentLength / 2;
+    return this.hose.points.map((p, i) => ({
+      x: p.x,
+      y: p.y,
+      r: radius + i * 10,
+    }));
+  }
 
   private renderSkeletonLine(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
@@ -64,43 +78,41 @@ class HoseRenderer {
   render(ctx: CanvasRenderingContext2D) {
     if (this.hose.points.length < 2) return;
 
-    // this.renderSkeletonLine(ctx);
+    this.renderSkeletonLine(ctx);
     // this.renderCrossPoints(ctx);
     // this.renderCircles(ctx);
     this.renderDebug(ctx);
   }
 
-  private renderAngles() {
+  private renderDebugAngles() {
     const angles: number[] = [];
     for (let i = 1; i < this.hose.points.length; i++) {
       const point = this.hose.points[i];
       const prev = this.hose.points[i - 1];
-      angles.push(Math.atan2(point.y - prev.y, point.x - prev.x));
+      const angle = Math.atan2(point.y - prev.y, point.x - prev.x);
+      angles.push(normalizeAngle(angle));
     }
 
     this.hose.ctx.debug.setDebugData(
       "Angles",
-      angles
-        // .map((angle) => ((angle * 180) / Math.PI + 360) % 360)
-        .map((angle) => angle.toFixed(2).padStart(6, " ")),
+      angles.map(radToDeg).map((angle) => angle.toFixed(2).padStart(6, " ")),
     );
     this.hose.ctx.debug.setDebugData(
       "Diffs",
       angles
-        // .map((angle) => ((angle * 180) / Math.PI + 360) % 360)
-
         .reduce((acc, angle, i, angles) => {
           if (i === 0) return [];
           const diff = angle - angles[i - 1];
-          acc.push(diff);
+          acc.push(normalizeAngle(diff));
           return acc;
         }, [] as number[])
+        .map(radToDeg)
         .map((angle) => angle.toFixed(2).padStart(6, " ")),
     );
   }
 
   private renderDebug(ctx: CanvasRenderingContext2D) {
-    this.renderAngles();
+    this.renderDebugAngles();
 
     this.renderStarCap(ctx);
     this.renderEndCap(ctx);
@@ -148,72 +160,14 @@ class HoseRenderer {
     x: number,
     y: number,
     radius = 4,
+    color = "red",
   ) {
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  private renderTangentPoints(
-    ctx: CanvasRenderingContext2D,
-    current: { x: number; y: number },
-    prev: { x: number; y: number },
-    radius: number,
-  ) {
-    const angle = Math.atan2(current.y - prev.y, current.x - prev.x);
-
-    type P = { x: number; y: number };
-
-    const l1: P = {
-      x: prev.x + Math.sin(angle) * radius,
-      y: prev.y - Math.cos(angle) * radius,
-    };
-
-    const r1: P = {
-      x: prev.x - Math.sin(angle) * radius,
-      y: prev.y + Math.cos(angle) * radius,
-    };
-
-    const l2: P = {
-      x: current.x + Math.sin(angle) * radius,
-      y: current.y - Math.cos(angle) * radius,
-    };
-
-    const r2: P = {
-      x: current.x - Math.sin(angle) * radius,
-      y: current.y + Math.cos(angle) * radius,
-    };
-
-    // ctx.save();
-
-    // ctx.fillStyle = "red";
-    // this.renderPoint(ctx, l1.x, l1.y);
-    // ctx.fillStyle = "green";
-    // this.renderPoint(ctx, l2.x, l2.y);
-
-    // ctx.fillStyle = "darkred";
-    // this.renderPoint(ctx, r1.x, r1.y);
-    // ctx.fillStyle = "darkgreen";
-    // this.renderPoint(ctx, r2.x, r2.y);
-
-    // ctx.restore();
-
-    ctx.beginPath;
-    ctx.moveTo(l1.x, l1.y);
-    ctx.lineTo(l2.x, l2.y);
-    ctx.stroke();
-
-    ctx.beginPath;
-    ctx.moveTo(r1.x, r1.y);
-    ctx.lineTo(r2.x, r2.y);
-    ctx.stroke();
-
-    const ecs = 1e-10;
-
-    if (angle < ecs) {
-    } else if (angle > ecs) {
-    }
+    const prevColor = ctx.fillStyle;
+    ctx.fillStyle = color;
+    const p = new Path2D();
+    p.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill(p);
+    ctx.fillStyle = prevColor;
   }
 
   private getCircleTangents(
@@ -282,11 +236,144 @@ class HoseRenderer {
     this.renderPoint(ctx, p4.x, p4.y);
     ctx.restore();
 
-    const ecs = 1e-10;
+    const ecs = 1e-9;
 
-    if (angle < ecs) {
-    } else if (angle > ecs) {
+    if (angle < -0.1 + ecs) {
+      // spike
+    } else if (angle > 0.1 + ecs) {
+      // arc
+      // ctx.save();
+      // ctx.fillStyle = "magenta";
+      // ctx.beginPath();
+      // ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+      // ctx.stroke();
+      // ctx.closePath();
+      // ctx.restore();
     }
+  }
+
+  private renderTangentPoints3(ctx: CanvasRenderingContext2D, i: number) {
+    const radius = this.hose.segmentLength / 2;
+    const points = this.hose.points;
+    const prev = points[i - 1];
+    const current = points[i];
+    const next = points[i + 1];
+
+    if (!prev || !current) return;
+
+    const a = { x: prev.x, y: prev.y, r: radius };
+    const b = { x: current.x, y: current.y, r: radius };
+    const [p1, p2, p3, p4] = this.getCircleTangents(a, b);
+
+    //
+
+    // left
+    ctx.strokeStyle = "darkgreen";
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+    ctx.closePath();
+
+    // join
+    if (next) {
+      const prevAngle = Math.atan2(current.y - prev.y, current.x - prev.x);
+      const nextAngle = Math.atan2(next.y - current.y, next.x - current.x);
+      const angleDiff = normalizeAngle(nextAngle - prevAngle);
+
+      const c = { x: next.x, y: next.y, r: radius };
+      const [n1, n2, n3, n4] = this.getCircleTangents(b, c);
+
+      const threshold = 1e-3;
+
+      ctx.beginPath();
+      if (angleDiff < -threshold) {
+        // left
+        ctx.arc(
+          b.x,
+          b.y,
+          b.r,
+          nextAngle + Math.PI / 2,
+          prevAngle + Math.PI / 2,
+        );
+
+        const [ix, iy] =
+          getIntersection(
+            [
+              [p1.x, p1.y],
+              [p2.x, p2.y],
+            ],
+            [
+              [n1.x, n1.y],
+              [n2.x, n2.y],
+            ],
+          ) ?? [];
+        if (ix && iy) {
+          this.renderPoint(ctx, ix, iy, 6, "magenta");
+
+          if (i === Math.floor(points.length / 2)) {
+            ctx.fillStyle = "red";
+            ctx.strokeStyle = "red";
+            const l = Math.sqrt((ix - b.x) ** 2 + (iy - b.y) ** 2);
+            this.debug.setDebugData("Mitter ratio", (l / radius).toFixed(2));
+
+            const paths = [
+              { p: new Path2D(), c: "white" },
+              { p: new Path2D(), c: "lime" },
+              { p: new Path2D(), c: "orange" },
+              { p: new Path2D(), c: "fuchsia" },
+            ];
+            const [mitterCircle, limitCircle, limitCircle2, limitCircle3] =
+              paths;
+
+            mitterCircle.p.arc(b.x, b.y, l, 0, Math.PI * 2);
+            limitCircle.p.arc(b.x, b.y, radius, 0, Math.PI * 2);
+            limitCircle2.p.arc(b.x, b.y, radius * 2, 0, Math.PI * 2);
+            limitCircle3.p.arc(b.x, b.y, radius * 3, 0, Math.PI * 2);
+
+            ctx.save();
+            ctx.lineWidth = 1;
+            paths.forEach(({ p, c }) => {
+              ctx.strokeStyle = c;
+              ctx.stroke(p);
+            });
+            ctx.restore();
+          }
+        }
+      } else if (angleDiff > threshold) {
+        // right
+        ctx.arc(
+          b.x,
+          b.y,
+          b.r,
+          prevAngle - Math.PI / 2,
+          nextAngle - Math.PI / 2,
+        );
+
+        const [ix, iy] =
+          getIntersection(
+            [
+              [p3.x, p3.y],
+              [p4.x, p4.y],
+            ],
+            [
+              [n3.x, n3.y],
+              [n4.x, n4.y],
+            ],
+          ) ?? [];
+        if (ix && iy) this.renderPoint(ctx, ix, iy, 6, "cyan");
+      }
+      ctx.stroke();
+      ctx.closePath();
+    }
+
+    // right
+    ctx.strokeStyle = "darkgreen";
+    ctx.beginPath();
+    ctx.moveTo(p3.x, p3.y);
+    ctx.lineTo(p4.x, p4.y);
+    ctx.stroke();
+    ctx.closePath();
   }
 
   private renderTangentLines(ctx: CanvasRenderingContext2D) {
@@ -296,7 +383,7 @@ class HoseRenderer {
       // const currentPoint = this.hose.points[i];
       // const prevPoint = this.hose.points[i - 1];
 
-      this.renderTangentPoints2(ctx, i);
+      this.renderTangentPoints3(ctx, i);
     }
   }
 
