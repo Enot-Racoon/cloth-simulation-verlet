@@ -410,43 +410,44 @@ class HoseRenderer {
           // left turn - mitter
           $outline.lineTo(p1.x, p1.y).lineTo(p2.x, p2.y);
 
-          // const [n1, n2] = tangents[i];
-          // const intersection = getIntersection(p1, p2, n1, n2);
-          // $outline.lineTo(p1.x, p1.y).lineTo(p2.x, p2.y);
+          const [n1, n2] = tangents[i];
+          const intersection = getIntersection(p1, p2, n1, n2);
 
-          // if (intersection) {
-          //   this.renderPoint(ctx, intersection.x, intersection.y, 4, "cyan");
-          //   //   const mitterLength2 =
-          //   //     (intersection.x - current.x) ** 2 +
-          //   //     (intersection.y - current.y) ** 2;
+          if (intersection) {
+            this.renderPoint(ctx, intersection.x, intersection.y, 4, "cyan");
+            //   const mitterLength2 =
+            //     (intersection.x - current.x) ** 2 +
+            //     (intersection.y - current.y) ** 2;
 
-          //   //   // debug center
-          //   //   {
-          //   //     if (i === Math.floor(points.length / 2)) {
-          //   //       this.debug.setDebugData(
-          //   //         "mitterLength",
-          //   //         Math.sqrt(mitterLength2).toFixed(2),
-          //   //       );
-          //   //     }
-          //   //   }
+            //   // debug center
+            //   {
+            //     if (i === Math.floor(points.length / 2)) {
+            //       this.debug.setDebugData(
+            //         "mitterLength",
+            //         Math.sqrt(mitterLength2).toFixed(2),
+            //       );
+            //     }
+            //   }
 
-          //   //   if (mitterLength2 > radius * 3) {
-          //   //     $outline.lineTo(p1.x, p1.y).lineTo(p2.x, p2.y);
-          //   //   } else {
-          //   //     $outline.lineTo(intersection.x, intersection.y);
-          //   //   }
-          // } else {
-          //   $outline.lineTo(p1.x, p1.y).lineTo(p2.x, p2.y);
-          // }
+            //   if (mitterLength2 > radius * 3) {
+            //     $outline.lineTo(p1.x, p1.y).lineTo(p2.x, p2.y);
+            //   } else {
+            //     $outline.lineTo(intersection.x, intersection.y);
+            //   }
+          } else {
+            //   $outline.lineTo(p1.x, p1.y).lineTo(p2.x, p2.y);
+          }
         } else {
           // right turn - arc
-          $outline.arc(
-            current.x,
-            current.y,
-            radius,
-            angle - Math.PI / 2,
-            nextAngle - Math.PI / 2,
-          );
+          $outline
+            .lineTo(p1.x, p1.y)
+            .arc(
+              current.x,
+              current.y,
+              radius,
+              angle - Math.PI / 2,
+              nextAngle - Math.PI / 2,
+            );
         }
       }
     }
@@ -487,13 +488,15 @@ class HoseRenderer {
           $outline.lineTo(p3.x, p3.y).lineTo(p4.x, p4.y);
         } else {
           // right turn - arc
-          $outline.arc(
-            current.x,
-            current.y,
-            radius,
-            angle - Math.PI / 2,
-            nextAngle - Math.PI / 2,
-          );
+          $outline
+            .lineTo(p3.x, p3.y)
+            .arc(
+              current.x,
+              current.y,
+              radius,
+              angle - Math.PI / 2,
+              nextAngle - Math.PI / 2,
+            );
         }
       }
     }
