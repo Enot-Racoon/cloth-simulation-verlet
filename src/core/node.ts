@@ -1,4 +1,4 @@
-import { UpdateFn, DrawFn } from "../types";
+import { UpdateFn, RenderFn } from "../types";
 
 export interface Node {
   id: string;
@@ -8,7 +8,7 @@ export interface Node {
   y: number;
 
   update: UpdateFn;
-  draw: DrawFn;
+  draw: RenderFn;
 
   parent: Node | null;
   children: Node[];
@@ -18,10 +18,10 @@ export const createNode = (
   x: number = 0,
   y: number = 0,
   update: UpdateFn = () => {},
-  draw: DrawFn = () => {},
+  draw: RenderFn = () => {},
   children: Node[] = [],
   parent: Node | null = null,
-  type: string = "node"
+  type: string = "node",
 ): Node => ({
   id: crypto.randomUUID(),
   type,

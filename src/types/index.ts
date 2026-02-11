@@ -1,3 +1,5 @@
+import { Vector3D } from "./vector";
+
 export * from "./vector";
 
 export interface Point {
