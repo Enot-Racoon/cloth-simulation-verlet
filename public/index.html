@@ -27,9 +27,19 @@
       #debug {
         zoom: 1.5;
         position: absolute;
-        top: 2em;
-        right: 2em;
+        top: 2rem;
+        right: 2rem;
         z-index: 1;
+      }
+
+      #reload {
+        font-size: 3em;
+        line-height: 0;
+        position: absolute;
+        top: 3rem;
+        right: 1rem;
+        z-index: 1;
+        cursor: pointer;
       }
     </style>
   </head>
@@ -37,6 +47,7 @@
   <body>
     <canvas id="canvas"></canvas>
     <pre id="debug"></pre>
+    <div id="reload" onclick="location.reload()">↻</div>
     <script type="module" src="main.js"></script>
   </body>
 </html>
