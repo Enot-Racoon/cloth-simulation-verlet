@@ -216,6 +216,24 @@ class HoseRenderer {
     ];
   }
 
+  private _canUseMitter(a: Circle, b: Circle) {
+    const angle = angleOf(b, a);
+
+    // const intersection = getIntersection(p1, p2, n1, n2);
+    // if (intersection) {
+    //   const mitterLength2 =
+    //     (intersection.x - current.x) ** 2 +
+    //     (intersection.y - current.y) ** 2;
+
+    //   if (mitterLength2 > radius * 3) {
+    //     $outline.lineTo(p1.x, p1.y).lineTo(p2.x, p2.y);
+    //   } else {
+    //     $outline.lineTo(intersection.x, intersection.y);
+    //   }
+    // } else {
+    // }
+  }
+
   private renderTangentLines(ctx: CanvasRenderingContext2D) {
     const threshold = 1e-4;
     const points = this.hose.points;
@@ -404,34 +422,37 @@ class HoseRenderer {
 
       if (Math.abs(angleDiff) < threshold) {
         // Almost straight
-        $outline.lineTo(p1.x, p1.y).lineTo(p2.x, p2.y);
+        // $outline.lineTo(p1.x, p1.y)
+        $outline.lineTo(p2.x, p2.y);
       } else {
         if (angleDiff < 0) {
           // left turn - mitter
-          $outline.lineTo(p1.x, p1.y).lineTo(p2.x, p2.y);
 
           const [n1, n2] = tangents[i];
           const intersection = getIntersection(p1, p2, n1, n2);
 
           if (intersection) {
+            // $outline.lineTo(intersection.x, intersection.y);
             this.renderPoint(ctx, intersection.x, intersection.y, 4, "cyan");
-            //   const mitterLength2 =
-            //     (intersection.x - current.x) ** 2 +
-            //     (intersection.y - current.y) ** 2;
+            const mitterLength2 =
+              (intersection.x - current.x) ** 2 +
+              (intersection.y - current.y) ** 2;
 
-            //   // debug center
-            //   {
-            //     if (i === Math.floor(points.length / 2)) {
-            //       this.debug.setDebugData(
-            //         "mitterLength",
-            //         Math.sqrt(mitterLength2).toFixed(2),
-            //       );
-            //     }
-            //   }
+            // debug center
+            {
+              if (i === Math.floor(points.length / 2)) {
+                this.debug.setDebugData(
+                  "mitterLength",
+                  Math.sqrt(mitterLength2).toFixed(2),
+                );
+              }
+            }
 
-            //   if (mitterLength2 > radius * 3) {
-            //     $outline.lineTo(p1.x, p1.y).lineTo(p2.x, p2.y);
-            //   } else {
+            if (mitterLength2 < radius ** 2 * 4) {
+              $outline.lineTo(intersection.x, intersection.y);
+              // $outline.lineTo(p2.x, p2.y);
+            }
+            // else {
             //     $outline.lineTo(intersection.x, intersection.y);
             //   }
           } else {
@@ -439,15 +460,13 @@ class HoseRenderer {
           }
         } else {
           // right turn - arc
-          $outline
-            .lineTo(p1.x, p1.y)
-            .arc(
-              current.x,
-              current.y,
-              radius,
-              angle - Math.PI / 2,
-              nextAngle - Math.PI / 2,
-            );
+          $outline.arc(
+            current.x,
+            current.y,
+            radius,
+            angle - Math.PI / 2,
+            nextAngle - Math.PI / 2,
+          );
         }
       }
     }
@@ -477,7 +496,7 @@ class HoseRenderer {
       const angle = angleOf(prev, current);
       const nextAngle = angleOf(current, next);
       const angleDiff = normalizeAngle(nextAngle - angle);
-      const [, , p3, p4] = tangents[i];
+      const [, , p3, p4] = tangents[i - 1];
 
       if (Math.abs(angleDiff) < threshold) {
         // Almost straight
@@ -486,10 +505,17 @@ class HoseRenderer {
         if (angleDiff < 0) {
           // left turn - mitter
           $outline.lineTo(p3.x, p3.y).lineTo(p4.x, p4.y);
+
+          const [, , n3, n4] = tangents[i];
+          const intersection = getIntersection(p3, p4, n3, n4);
+
+          if (intersection) {
+            this.renderPoint(ctx, intersection.x, intersection.y, 4, "yellow");
+          }
         } else {
           // right turn - arc
           $outline
-            .lineTo(p3.x, p3.y)
+            // .lineTo(p3.x, p3.y)
             .arc(
               current.x,
               current.y,
@@ -528,11 +554,17 @@ export default class Hose extends Chain {
   ) {
     super(startX, startY, segmentLength, segmentCount);
 
-    const firstPoint = this.points[0];
-    const lastPoint = this.points[this.points.length - 1];
-    lastPoint.x = (lastPoint.x - firstPoint.x) / 2 + firstPoint.x;
-    lastPoint.y = firstPoint.y;
-    lastPoint.pinned = true;
+    // const firstPoint = this.points[0];
+    // const lastPoint = this.points[this.points.length - 1];
+    // lastPoint.x = (lastPoint.x - firstPoint.x) / 2 + firstPoint.x;
+    // lastPoint.y = firstPoint.y;
+    // lastPoint.pinned = true;
+
+    this.points.forEach((p, i) => {
+      p.x += 20 * i;
+      p.y = this.points[i % 2].y + 20 * i;
+      p.pinned = true;
+    });
 
     this.renderer = new HoseRenderer(this);
   }
